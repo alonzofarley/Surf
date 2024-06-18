@@ -88,3 +88,16 @@ export function ConceptInputs(props: ConceptInputsProps) {
         <button onClick={addRow}>Add Row</button>
     </div>
 }
+
+
+export async function getServerSideProps() {
+    return {
+        props: {
+            onSubmit: () => {console.log("not implemented");}
+        }
+    }
+}
+
+export default function ConceptInputsPreview(props: ConceptInputsProps){
+    return <ConceptInputs {...props} />
+}

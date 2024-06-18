@@ -1,7 +1,9 @@
 
 
 
+Look into server actions
 
+https://www.crocoder.dev/blog/use-server-nextjs/
 
 
 # Planning

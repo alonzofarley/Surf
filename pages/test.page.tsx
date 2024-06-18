@@ -8,8 +8,8 @@ import { displayPlayers } from "./components/displayPlayers";
 import { get } from "http";
 import { alignStates } from "./utils/misc";
 import { WaitingRoom } from "./components/waitingRoom";
-import { GuessGiverView } from "./guessGiverView";
-import { GuesserView } from "./guesserView";
+import { GuessGiverView } from "./guessGiverView.page";
+import { GuesserView } from "./guesserView.page";
 import { GameResponseData } from "./utils/types";
 
 let socket: SocketType;

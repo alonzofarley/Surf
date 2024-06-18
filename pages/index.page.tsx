@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ConceptInputs } from "./conceptInputs";
+import { ConceptInputs } from "./conceptInputs.page";
 import { fetchWithType } from "./utils/misc";
 import { GameResponseData } from "./utils/types";
 
