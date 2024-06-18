@@ -3,12 +3,13 @@ import { fetchWithType } from "./utils/misc";
 import { PercentSliderInput } from "./components/percentSliderInput";
 import { GameResponseData, GuessGiverData, PlayerColors, supportedColors } from "./utils/types";
 import { displayPlayers } from "./components/displayPlayers";
-import { ClientSideUserView } from "./utils/socketTypes";
+import { ClientSideUserView, SocketClientMessageType, SocketType } from "./utils/socketTypes";
 
 type GuessGiverViewProps = {
     gameId: string,
     players: ClientSideUserView[], 
-    name: string
+    name: string, 
+    socket: SocketType,
 }
 
 type State = {
@@ -67,10 +68,14 @@ export function GuessGiverView(props: GuessGiverViewProps) {
 
         console.log(otherPlayers, colors);
 
+        const nextRound = () => {
+            props.socket.emit(SocketClientMessageType.NEXT_ROUND);
+        }
         return <div>
             <p>This is the target value</p>
             <form>
                 <PercentSliderInput value={state.targetPercent} disabled={true} players={otherPlayers} colors={colors} concepts={concepts}/>
+                <button onClick={nextRound}>Next Round</button>
             </form>
             {displayPlayers(props.players, colors)}
         </div>

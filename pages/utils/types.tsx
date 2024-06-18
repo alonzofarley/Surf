@@ -24,7 +24,8 @@ export type Game = {
     id: string, 
     concept1: string,
     concept2: string,
-    targetPercent: number
+    targetPercent: number, 
+    availableConceptList: ConceptPair[]
 }
 
 export type GamesFile = {

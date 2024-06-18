@@ -39,10 +39,7 @@ const SocketHandler = (req:any, res:any) => {
 
     io.on('connection', socket => {
         console.log("Someone connected")
-        console.log("Current socket");
-        console.log(socket.id)
-        // console.log(sockets)
-        // console.log(disconnectedSockets)
+        console.log("Current socket", socket.id);
 
         if(disconnectedSockets[socket.id]){
             sockets[socket.id] = disconnectedSockets[socket.id];
@@ -194,8 +191,15 @@ const SocketHandler = (req:any, res:any) => {
 
         })
 
-        socket.on(SocketClientMessageType.NEXT_ROUND, () => {
-        
+        socket.on(SocketClientMessageType.NEXT_ROUND, async () => {
+            let userData = sockets[socket.id];
+            let gameId = userData.gameId;
+            let newGameData = await fetchWithType<GameResponseData>(`http://localhost:3000/api/game?nextRound=true&gameId=${gameId}`);
+            //Now Clients should grab the information from the game api
+            let message: SocketServerMessage = {
+                type: SocketServerMessageType.NEXT_ROUND, 
+            }
+            io.emit(message.type);
         })
 
         socket.on(SocketClientMessageType.GUESS_CHANGED, (msg: SocketClientMessageTypeGuessChanged) => {            

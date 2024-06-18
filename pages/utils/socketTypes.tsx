@@ -50,7 +50,8 @@ export enum SocketServerMessageType {
     TO_GUESSER = 'to_guesser', 
     TO_GUESSGIVER = 'to_guess_giver', 
     GUESS_GIVER_GUESS_SUBMITTED = 'guess_giver_guess_submitted', 
-    GUESS_GIVER_GUESS_CHANGED = 'guess_giver_guess_changed'
+    GUESS_GIVER_GUESS_CHANGED = 'guess_giver_guess_changed', 
+    NEXT_ROUND = 'next_round'
 }
 
 export type ClientSideUserView = {
@@ -98,6 +99,8 @@ export type SocketServerMessage = {
 } | {
     type: SocketServerMessageType.GUESS_GIVER_GUESS_SUBMITTED
     data: SocketServerMessageTypeGuessGiverGuessSubmitted
+} | {
+    type: SocketServerMessageType.NEXT_ROUND
 }
 
 export type SocketType = Socket<DefaultEventsMap, DefaultEventsMap>

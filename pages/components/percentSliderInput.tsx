@@ -28,9 +28,9 @@ export function PercentSliderInput(props: PercentSliderInputProps) {
         <input type="range" className="slider" value={props.value} disabled={isDisabled} onChange={onChange}/>
         <label className="slider_secondLabel">{props.concepts.concept2}</label>
 
-        {props.players.map(player => {
+        {props.players.map((player, i) => {
             let color = colors[player.name];
-            return <input className={"slider_background " + color} type="range" value={player.guess} disabled/>
+            return <input key={i} className={"slider_background " + color} type="range" value={player.guess} disabled/>
         })}    
     </div>
 </div>

@@ -120,7 +120,7 @@ export default function Test(props: {}) {
                 </div>
             case('guessGiver'):
                 return <div>
-                    <GuessGiverView gameId={state.gameId} players={players} name={state.name} />
+                    <GuessGiverView gameId={state.gameId} players={players} name={state.name} socket={socket}/>
                 </div>
             default:
                 return <div>

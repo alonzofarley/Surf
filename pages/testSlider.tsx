@@ -16,24 +16,16 @@ export default function TestSlider(props: TestSliderProps) {
         ]
     )
 
-    // setInterval(() => {
-    //     let s = [...players]
-    //     s.forEach(player => {
-    //         player.value = Math.floor(Math.random() * 100);
-    //     })
-    //     setPlayers(s);
-    // }, 4000)
-
     return <div className="slider_container_container">
         <div className="slider_container">
             <label className="slider_firstLabel">First Concept</label>
             <input type="range" className="slider"/>
             <label className="slider_secondLabel">Second Concept</label>
 
-            {players.map(player => {
+            {players.map((player, i) => {
                 let colors = ["blue", "green", "red", "yellow", "purple", "white", "brown"];
                 let color = colors[Math.floor(Math.random() * colors.length)]
-                return <input className={"slider_background " + color} type="range" value={player.value} disabled/>
+                return <input key={i} className={"slider_background " + color} type="range" value={player.value} disabled/>
             })}    
         </div>
     </div>
