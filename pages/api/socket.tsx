@@ -1,4 +1,4 @@
-import { Server } from 'Socket.IO'
+import { Server } from 'socket.io'
 import { SocketClientMessage, SocketClientMessageType, SocketClientMessageTypeGuessChanged, SocketClientMessageTypeGuessSubmitted, SocketClientMessageTypeRegister, SocketServerMessage, SocketServerMessageType, User, UserRole } from '../utils/socketTypes'
 import { use } from 'react';
 import { setUncaughtExceptionCaptureCallback } from 'process';

@@ -1,4 +1,4 @@
-import { Server } from 'Socket.IO'
+import { Server } from 'socket.io'
 //https://codedamn.com/news/nextjs/how-to-use-socket-io
 //https://codedamn.com/news/nextjs/how-to-use-socket-io - this has some wrong stuff but the outline from here. next link filled in gaps.
 //https://medium.com/@mohammadaliasghar523/creating-a-real-time-chat-app-with-next-js-and-websockets-e41fd131949c
