@@ -1,4 +1,5 @@
-var fs = require('fs');
+// var fs = require('fs');
+import fs from "fs";
 import { readFile } from 'fs/promises';
 
 export const writeToFile = (target: string, data: any, callback: any) => {
