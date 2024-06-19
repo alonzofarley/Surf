@@ -96,7 +96,7 @@ export async function getServerSideProps() {
             onSubmit: () => {console.log("not implemented");}
         }
     }
-}
+} 
 
 export default function ConceptInputsPreview(props: ConceptInputsProps){
     return <ConceptInputs {...props} />

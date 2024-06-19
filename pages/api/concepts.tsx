@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import {writeToFile, readFileWithType} from "../utils/file";
-import { ConceptPair } from '../utils/types';
+import {writeToFile, readFileWithType} from "../../utils/file";
+import { ConceptPair } from '../../utils/types';
 
 var fs = require('fs');
  
@@ -17,7 +17,7 @@ export default async function handler(
   res: NextApiResponse<ResponseData>
 ) {
     if (req.method === 'GET') {
-        let data = await readFileWithType<any>("data/concepts.json");
+        let data = await readFileWithType<any>("/data/concepts.json");
 
         res.status(200).json(data);
     } else if (req.method === 'POST') {
@@ -27,7 +27,7 @@ export default async function handler(
             let conceptList = body.concepts;
             console.log(conceptList)
             
-            writeToFile("data/concepts.json", {
+            writeToFile("/data/concepts.json", {
                 "concepts": conceptList
             }, () => {});
             

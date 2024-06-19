@@ -1,9 +1,9 @@
 import { Server } from 'socket.io'
-import { SocketClientMessage, SocketClientMessageType, SocketClientMessageTypeGuessChanged, SocketClientMessageTypeGuessSubmitted, SocketClientMessageTypeRegister, SocketServerMessage, SocketServerMessageType, User, UserRole } from '../utils/socketTypes'
+import { SocketClientMessage, SocketClientMessageType, SocketClientMessageTypeGuessChanged, SocketClientMessageTypeGuessSubmitted, SocketClientMessageTypeRegister, SocketServerMessage, SocketServerMessageType, User, UserRole } from '../../utils/socketTypes'
 import { use } from 'react';
 import { setUncaughtExceptionCaptureCallback } from 'process';
-import { fetchWithType, scoreGuess } from '../utils/misc';
-import { GameResponseData } from '../utils/types';
+import { fetchWithType, scoreGuess } from '../../utils/misc';
+import { GameResponseData } from '../../utils/types';
 
 
 //https://codedamn.com/news/nextjs/how-to-use-socket-io - this has some wrong stuff but the outline from here. next link filled in gaps.
@@ -103,7 +103,7 @@ const SocketHandler = (req:any, res:any) => {
             })
 
             if(socketRecord.every(record => record.user.ready)){
-                let newGameData = await fetchWithType<GameResponseData>("http://localhost:3000/api/game");
+                let newGameData = await fetchWithType<GameResponseData>("/api/game");
                 let newGameId = newGameData.gameId;
 
                 let numberOfUsers = socketRecord.length;
@@ -194,7 +194,7 @@ const SocketHandler = (req:any, res:any) => {
         socket.on(SocketClientMessageType.NEXT_ROUND, async () => {
             let userData = sockets[socket.id];
             let gameId = userData.gameId;
-            let newGameData = await fetchWithType<GameResponseData>(`http://localhost:3000/api/game?nextRound=true&gameId=${gameId}`);
+            let newGameData = await fetchWithType<GameResponseData>(`/api/game?nextRound=true&gameId=${gameId}`);
             //Now Clients should grab the information from the game api
             let message: SocketServerMessage = {
                 type: SocketServerMessageType.NEXT_ROUND, 

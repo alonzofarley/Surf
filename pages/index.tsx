@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { ConceptInputs } from "./conceptInputs.page";
-import { fetchWithType } from "./utils/misc";
-import { GameResponseData } from "./utils/types";
+import { ConceptInputs } from "./conceptInputs";
+import { fetchWithType } from "../utils/misc";
+import { GameResponseData } from "../utils/types";
 
 import io from "socket.io-client";
 
-let socket = io('http://localhost:3000/socket');
+let socket = io('/socket');
 
 type State = {
     conceptsSubmitted: boolean, 

@@ -13,6 +13,7 @@ export default function Test(props: {}) {
         socketInitializer()
     }, [])
 
+    
     const socketInitializer = async () => {
         await fetch('/api/socket')
         socket = io()

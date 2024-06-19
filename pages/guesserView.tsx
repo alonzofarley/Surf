@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { PercentSliderInput } from "./components/percentSliderInput";
-import { fetchWithType, scoreGuess } from "./utils/misc";
-import { GuesserData, GuesserResults, GuesserSubmission, PlayerColors, supportedColors } from "./utils/types";
-import { displayPlayers } from "./components/displayPlayers";
-import { ClientSideUserView, SocketClientMessage, SocketClientMessageType, SocketType } from "./utils/socketTypes";
+import { PercentSliderInput } from "../components/percentSliderInput";
+import { fetchWithType, scoreGuess } from "../utils/misc";
+import { GuesserData, GuesserResults, GuesserSubmission, PlayerColors, supportedColors } from "../utils/types";
+import { displayPlayers } from "../components/displayPlayers";
+import { ClientSideUserView, SocketClientMessage, SocketClientMessageType, SocketType } from "../utils/socketTypes";
 import { platform } from "os";
 
 type GuesserViewProps = {
@@ -54,6 +54,7 @@ export function GuesserView(props: GuesserViewProps) {
         }
         getGuesserData();
 
+        
 
         let startingColors:PlayerColors = {};
         for(let i = 0; i < props.players.length; i++){

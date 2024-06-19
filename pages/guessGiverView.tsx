@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { fetchWithType } from "./utils/misc";
-import { PercentSliderInput } from "./components/percentSliderInput";
-import { GameResponseData, GuessGiverData, PlayerColors, supportedColors } from "./utils/types";
-import { displayPlayers } from "./components/displayPlayers";
-import { ClientSideUserView, SocketClientMessageType, SocketType } from "./utils/socketTypes";
+import { fetchWithType } from "../utils/misc";
+import { PercentSliderInput } from "../components/percentSliderInput";
+import { GameResponseData, GuessGiverData, PlayerColors, supportedColors } from "../utils/types";
+import { displayPlayers } from "../components/displayPlayers";
+import { ClientSideUserView, SocketClientMessageType, SocketType } from "../utils/socketTypes";
 
 type GuessGiverViewProps = {
     gameId: string,

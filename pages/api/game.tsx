@@ -1,12 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import {readFileWithType, writeToFile} from "../utils/file";
-import { ConceptPair, ConceptsFile, Game, GameResponseData, GamesFile } from '../utils/types';
+import {readFileWithType, writeToFile} from "../../utils/file";
+import { ConceptPair, ConceptsFile, Game, GameResponseData, GamesFile } from '../../utils/types';
 import {v4 as uuidv4} from 'uuid';
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<GameResponseData>
 ) {
-    
 
     if (req.method === 'GET') {
         if(req.query.gameId && req.query.nextRound){

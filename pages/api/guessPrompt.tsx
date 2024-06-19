@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { ApiResultError, Game, GamesFile, GuessGiverData, GuesserData, GuesserResults, GuesserSubmission } from '../utils/types';
-import { readFileWithType } from '../utils/file';
+import { ApiResultError, Game, GamesFile, GuessGiverData, GuesserData, GuesserResults, GuesserSubmission } from '../../utils/types';
+import { readFileWithType } from '../../utils/file';
 
 export default async function handler(
   req: NextApiRequest,
