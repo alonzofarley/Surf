@@ -114,5 +114,7 @@ export type User = {
     ready: boolean, 
     gameId: string, 
     recentGuess: number,
-    score: number
+    score: number, 
+    socketId: string
 }
+

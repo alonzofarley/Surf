@@ -53,7 +53,8 @@ const SocketHandler = (req:any, res:any) => {
                 ready: false, 
                 gameId: '',
                 recentGuess: NaN, 
-                score: 0
+                score: 0, 
+                socketId: ""
             }
             console.log("socket created new data")
 
@@ -103,7 +104,7 @@ const SocketHandler = (req:any, res:any) => {
             })
 
             if(socketRecord.every(record => record.user.ready)){
-                let newGameData = await fetchWithType<GameResponseData>("/api/game");
+                let newGameData = await fetchWithType<GameResponseData>("http://localhost:3000/api/game");
                 let newGameId = newGameData.gameId;
 
                 let numberOfUsers = socketRecord.length;
@@ -194,7 +195,7 @@ const SocketHandler = (req:any, res:any) => {
         socket.on(SocketClientMessageType.NEXT_ROUND, async () => {
             let userData = sockets[socket.id];
             let gameId = userData.gameId;
-            let newGameData = await fetchWithType<GameResponseData>(`/api/game?nextRound=true&gameId=${gameId}`);
+            let newGameData = await fetchWithType<GameResponseData>(`http://localhost:3000/api/game?nextRound=true&gameId=${gameId}`);
             //Now Clients should grab the information from the game api
             let message: SocketServerMessage = {
                 type: SocketServerMessageType.NEXT_ROUND, 
