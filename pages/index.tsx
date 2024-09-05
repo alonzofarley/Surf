@@ -1,66 +1,32 @@
-import { useEffect, useState } from "react";
-import { ConceptInputs } from "./conceptInputs";
-import { fetchWithType } from "../utils/misc";
-import { GameResponseData } from "../utils/types";
+import { useRouter } from "next/router";
+import { useState } from "react";
+import { Button, Col, Form, Row } from "react-bootstrap";
 
-import io from "socket.io-client";
 
-let socket = io('/socket');
-
-type State = {
-    conceptsSubmitted: boolean, 
-    view: View, 
-    gameId?: string
-}
-
-const initialState: State = {
-    conceptsSubmitted: false, 
-    view: "Input", 
-}
-
-type View = "Input" | "Play" | "Home" | "Load Game";
-
-export default function Wave(props: {}) {
-    const [state, setState] = useState(initialState);
-    
-    useEffect(() => {
-        socket.on('connect', () => {
-            console.log('Connected to the server');
-        });
-        return () => {
-            socket.disconnect();
-        };
-    }, []);
-
-    const onConceptsSubmitted = () => {
-        setState({...state, conceptsSubmitted: true, view: "Load Game"});
+export default function Index(props: {}) {
+    const router = useRouter();
+    const launchStocks = () => {
+        router.push(`/stocksGame`);
     }
 
-    const loadGame = async () => {
-        let gameResponseData: GameResponseData = await fetchWithType<GameResponseData>("api/game");
-
+    const launchWaves = () => {
+        router.push(`/waves`);
     }
 
-    switch(state.view){
-        case("Input"):
-            return <div>
-                <ConceptInputs onSubmit={onConceptsSubmitted}/>
-            </div>
-        case("Load Game"):
-            loadGame();
-            return <div>
-                <p>Loading...</p>
-            </div>
-        case("Play"):
-            //Create new Game and get gameId
-            //Send both Guessgiver and guesser the gameId
+    return <div>
+        <h1>Choose Project</h1>
+        <br></br>
+        <Row>
+            <Col>
+                <Button onClick={launchStocks}>Launch Stocks Game</Button>
+            </Col>
+        </Row>
+        <br></br>
+        <Row>
+            <Col>
+                <Button onClick={launchWaves}>Launch Waves</Button>
+            </Col>
+        </Row>
 
-        default: 
-            return <div>
-                <p>Not Yet Implemented</p>
-            </div>
-    }
+    </div>
 }
-
-
-
