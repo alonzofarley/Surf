@@ -35,3 +35,6 @@ Things to do
 - Add a timer; if user does not input guess by then, their guess doesnt matter
 - Add a 
 
+https://dashboard.pusher.com/apps/1856429/getting_started
+
+

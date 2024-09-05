@@ -1,71 +1,50 @@
+// 'use server';
+import { ServerPusherWrapper } from "@/components/server-pusher-wrapper";
+import { WaitingRoom } from "@/components/waitingRoom";
+import { pusherClient } from "@/utils/pusher";
 import { ClientSideUserView, SocketServerMessageType, SocketServerMessageTypeUpdateUsers, SocketType, UserRole } from "@/utils/socketTypes";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { io } from "socket.io-client";
 
-let socket: SocketType;
-let socketApiRoute = '/api/newSocket';
-
-
-type State = {
-    socketReady: boolean
-    registered: boolean, 
-    players: ClientSideUserView[], 
-    role: UserRole, 
-    gameId: string, 
-    name: string, 
-    testMessage: string
-}
+// type State = {
+//     socketReady: boolean
+//     registered: boolean, 
+//     players: ClientSideUserView[], 
+//     role: UserRole, 
+//     gameId: string, 
+//     name: string, 
+//     testMessage: string
+// }
 
 export default function Test(props: {}) {
-    let initialState: State = {
-        socketReady: false, 
-        registered: false,
-        players: [],
-        role: 'unassigned', 
-        gameId: '', 
-        name: '', 
-        testMessage: ''
-    }
-    let [state, setState] = useState(initialState);
-    useEffect(() => {
-        socketInitializer(setState).then(() => {
-            setState({
-                ...state,
-                socketReady: true, 
-            })
-        })
-    }, [])
-
-    const socketInitializer = async (setState: Dispatch<SetStateAction<State>>) => {
-        await fetch(socketApiRoute)
-        socket = io()
-
-        socket.on('connect', () => {
-            console.log('connected');
-        })
-
-        socket.on('testMessage', (msg: {message: string}) => {
-            console.log('new message');
-            console.log(msg.message);
-            setState({
-                ...state, 
-                testMessage: msg.message
-            })
-        })
-
-        socket.on(SocketServerMessageType.UPDATE_USERS, (msg: SocketServerMessageTypeUpdateUsers) => {
-            setState({
-                ...state,
-                players: msg.users 
-            })
-            console.log(SocketServerMessageType.UPDATE_USERS, msg)
-        })
-    }
-
+    // let initialState: State = {
+    //     socketReady: false, 
+    //     registered: false,
+    //     players: [],
+    //     role: 'unassigned', 
+    //     gameId: '', 
+    //     name: '', 
+    //     testMessage: ''
+    // }
+    // let [state, setState] = useState(initialState);
+    // useEffect(() => {
+    //     pusherClient.subscribe("chat-app")
+    //     pusherClient.bind('upcoming-message', (msg: { message: string; }) => {
+    //         setState({
+    //             ...state, 
+    //             testMessage: msg.message
+    //         })
+    //         console.log(msg);
+    //         console.log(msg.message);
+    //         console.log(JSON.parse(msg));
+    //     })
+    // }, [])
+    // let s = {emit: (s:any) => console.log(s)};
+    // return <div>
+    //     <WaitingRoom socket={s} players={[]}/>
+    // </div>
 
     return <div>
-        Test Message: 
-        <p>{state.testMessage}</p>
+        <ServerPusherWrapper />
     </div>
 
 }

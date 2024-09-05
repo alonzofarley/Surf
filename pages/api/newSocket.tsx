@@ -1,90 +1,39 @@
-import { Server } from 'socket.io'
-import { SocketClientMessage, SocketClientMessageType, SocketClientMessageTypeGuessChanged, SocketClientMessageTypeGuessSubmitted, SocketClientMessageTypeRegister, SocketServerMessage, SocketServerMessageType, User, UserRole } from '../../utils/socketTypes'
-import { use } from 'react';
-import { setUncaughtExceptionCaptureCallback } from 'process';
-import { fetchWithType, scoreGuess } from '../../utils/misc';
-import { GameResponseData } from '../../utils/types';
+"use server"
+
+import { pusherServer } from "@/utils/pusher"
+
+let r = 4;
+let interval = setInterval(() => {
+  pusherServer.trigger("chat-app", "upcoming-message", {
+    message: "test" + r
+  })
+  r += Math.round(Math.random() * 16);
+}, 3000)
+
+pusherServer.trigger("chat-app", "upcoming-message", {
+  message: "jello World"
+})
+console.log("triggered");
+console.log(process.env.NEXT_PUBLIC_PUSHER_APP_ID)
+console.log(process.env.NEXT_PUBLIC_PUSHER_KEY)
+console.log(process.env.NEXT_PUBLIC_PUSHER_CLUSTER)
+console.log(process.env.PUSHER_SECRET)
 
 
-//https://codedamn.com/news/nextjs/how-to-use-socket-io - this has some wrong stuff but the outline from here. next link filled in gaps.
-//https://medium.com/@mohammadaliasghar523/creating-a-real-time-chat-app-with-next-js-and-websockets-e41fd131949c
-
-//io.sockets.socket(savedSocketId).emit(...) 
-
-let socketList: SocketList = {};
-let userList: UserList = [];
-let interval: NodeJS.Timeout;
-let testInterval = 4;
-
-type SocketList = {
-  [socketId: string] : User
-}
-
-type UserList = User[];
-
-const SocketHandler = (req:any, res:any) => {
-  if (res.socket.server.io) {
-    console.log('Socket already exists')
-  } else {
-    
-    console.log('Socket is initializing')
-    const io = new Server(res.socket.server)
-    res.socket.server.io = io
-
-    io.on('connection', onConnection(io))
-
-    if(!interval){
-      interval = setInterval(() => {
-        let m = "test: " + testInterval;
-        console.log(m);
-        io.emit("testMessage", {
-          message: m
-        })
-        testInterval += Math.round(10 * Math.random())
-      }, 3000)
-    }
-  }
+const SHandler = (req:any, res:any) => {
   res.end()
 }
 
+// const createEmptyUser: (socketId: string) => User = (socketId) => {
+//     return {
+//       name: "", 
+//       role: "unassigned", 
+//       ready: false, 
+//       recentGuess: NaN, 
+//       score: 0, 
+//       gameId: "",
+//       socketId: socketId
+//     }
+// }
 
-const onConnection = (io: Server) => (socket: any) => {
-    console.log("Someone connected");
-    const socketId = socket.id;
-    console.log(`Socket Id: ${socketId}`);
-
-    const newUser = createEmptyUser(socketId)
-    socketList[socketId] = newUser;
-    userList.push(newUser);
-
-    console.log(socketList);
-
-    socket.on('disconnect', disconnect(socketId));
-}
-
-const disconnect = (socketId: any) => () => {
-  //io.emit('hello', "hello world");
-  console.log(`User with socket id ${socketId} disconnected`)
-  delete socketList[socketId];
-  userList.filter((user) => {
-    return user.socketId != socketId;
-  });
-  if(interval && userList.length == 0){
-    clearInterval(interval);
-    console.log("clearing interval");
-  }
-}
-
-const createEmptyUser: (socketId: string) => User = (socketId) => {
-    return {
-      name: "", 
-      role: "unassigned", 
-      ready: false, 
-      recentGuess: NaN, 
-      score: 0, 
-      gameId: "",
-      socketId: socketId
-    }
-}
-
-export default SocketHandler
+export default SHandler

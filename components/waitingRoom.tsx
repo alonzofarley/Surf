@@ -3,7 +3,7 @@ import { ClientSideUserView, SocketClientMessage, SocketClientMessageType, Socke
 import { displayPlayers } from "./displayPlayers";
 
 type WaitingRoomProps = {
-    socket: SocketType, 
+    socket: any, 
     players: ClientSideUserView[]
 }
 
