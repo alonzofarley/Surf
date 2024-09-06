@@ -31,7 +31,7 @@ export function StocksShop(props: StocksShopProps) {
     }];
 
     return <Modal show={visible} onHide={() => {}} backdrop="static" centered>
-    <Modal.Header closeButton>
+    <Modal.Header>
       <Modal.Title>Shop</Modal.Title>
     </Modal.Header>
     <Modal.Body>

@@ -3,7 +3,7 @@ import { Controls, State, Statistics } from "@/utils/stocksTypes";
 import { stat } from "fs";
 import next from "next";
 import { GraphHelpers } from "next/dist/compiled/webpack/webpack"
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { Accordion, Button, Col, Modal, Row } from "react-bootstrap";
 
 type StocksProps = {
@@ -13,6 +13,7 @@ type StocksProps = {
 }
 
 const defaultValue = 0;
+let initialTriggersPerSecond = 3;
 
 export default function Stocks(props: StocksProps) {
     let state = props.state;
@@ -24,6 +25,7 @@ export default function Stocks(props: StocksProps) {
     let hasStopped = state.hasStopped
     let startingVal = stats.initialValue ?? defaultValue;
     let currentValue = data.length > 0 ? data[data.length - 1][1] : startingVal;
+    let triggersPerSecond = state.triggersPerSecond;
 
     let generateNextValue = (dataSet: number[][]) => {
         let latestDataPoint = dataSet[dataSet.length - 1];
@@ -79,7 +81,10 @@ export default function Stocks(props: StocksProps) {
     }
 
     let fetchNewData = () => {
+        console.log("fetchNewData")
         if(hasStopped){
+            console.log(state);
+            console.log("fetchNewData hasStopped=true");
             return;
         }
         let nextState = {
@@ -87,12 +92,15 @@ export default function Stocks(props: StocksProps) {
         }
 
         if(data.length == 0){
+            console.log("fetchNewData, data length 0")
+
             nextState.data = [[0, startingVal]];
             nextState.stats = updateStats(nextState, startingVal)
-            setState(nextState)
+            setState(nextState);
             return;
         }
         
+        console.log("fetchNewData, data length > 0")
         let newPoint = generateNextValue(data);
         nextState.changeScalar = nextState.changeScalar + nextState.changeScalarAcceleration;
         nextState.data = [...nextState.data, newPoint];
@@ -101,12 +109,21 @@ export default function Stocks(props: StocksProps) {
     }
 
     useEffect(() => {
-        const timer = setInterval(() => {
-        fetchNewData();
-        }, 150);
+        let _tps = 1000 / triggersPerSecond;
+        let timer = setInterval(() => {
+            console.log("run");
+            fetchNewData();
+        }, _tps);
 
-        return () => clearInterval(timer)
+        return () => {
+            if(timer != null)
+            clearInterval(timer)
+        };
     });
+
+    let changeTPS = (tps: number) => {
+        controls.changeTPS(tps);
+    }
 
     let skip = (num: number) => {
         let newState = {...state,
@@ -131,10 +148,32 @@ export default function Stocks(props: StocksProps) {
     let statsInfo = <div className="card">
         <div className="card-body">
             <h5 className="card-title">Stats</h5>
-            <p>Round {stats.round.toString()}</p>
+            <p></p>
+            <Row>
+                <Col>
+                    <p>Banked Points: {stats.currentTotalPoints.toFixed(0)}</p>
+                </Col>
+            </Row>
+            <Row>
+                <Col sm={2}>
+                    <p>Round {stats.round.toString()}</p>
+                </Col>
+                <Col sm={2}>
+                    <p>Bet: {isNaN(stats.initialValue) ?? ""}</p>
+                </Col>
+            </Row>
+            <Row>
+                <Col sm={2}>
+                    <p>Shop Balance: {state.stats.currentShopBalance}</p>
+                </Col>
+                <Col sm={2}>
+                    <p>Bet: {isNaN(stats.initialValue) ?? ""}</p>
+                </Col>
+            </Row>
+            
             <Accordion>
                 <Accordion.Item eventKey="0">
-                    <Accordion.Header>{hasStopped ? "Final Score: " : "Current Score: "} {currentValue.toFixed(2)}</Accordion.Header>
+                    <Accordion.Header>{hasStopped ? "Final Round Score: " : "Current Round Score: "} {currentValue.toFixed(2)}</Accordion.Header>
                     <Accordion.Body>
                         <ul className="list-group list-group-flush">
                             <Row>
@@ -163,10 +202,6 @@ export default function Stocks(props: StocksProps) {
                                         <label>Change Scalar</label>
                                         <p>{changeScalar.toFixed(2)}</p>
                                     </li>
-                                    <li className="list-group-item">
-                                        <label>Total Points</label>
-                                        <p>{stats.currentTotalPoints.toFixed(2)}</p>
-                                    </li>
                                 </Col>
                                 <Col>
                                     <li className="list-group-item">
@@ -186,13 +221,15 @@ export default function Stocks(props: StocksProps) {
         </div>
         {hasStopped ?
             <div className="card-footer">
-                <Button className="btn btn-success" onClick={() => controls.score()}>Score</Button>
-                <button className="btn btn-warning" onClick={() => controls.restart()}>Restart</button>
+                <Button className="btn btn-success" onClick={() => controls.score()}>Score & Go to Shop</Button>
             </div>
         : <></>}    
     </div>
 
     return <div style={{width: "80%"}}>
+        <Row>
+            <Col></Col>
+        </Row>
         <div id="header"> 
             {statsInfo}
         </div>
@@ -200,19 +237,23 @@ export default function Stocks(props: StocksProps) {
             <StocksGraph data={data}/>
         </div>
         <div id="footer" className="container">
-            <div className="row">
+            <Row>
                 <div className="btn-group " role="group">
                     <button className="btn btn-outline-primary" onClick={() => skip(10)}>Skip 10</button>
                     <button className="btn btn-outline-primary" onClick={() => skip(100)}>Skip 100</button>
                     <button className="btn btn-outline-primary" onClick={() => skip(1000)}>Skip 1000</button>
                 </div>
-            </div>
-            <div className="row">
-                <div className="btn-group" role="group">
+            </Row>
+            <Row>
+            <div className="btn-group" role="group">
                     <button className="btn btn-danger" onClick={() => controls.stop()}>Stop</button>
                     <button className="btn btn-success" onClick={() => controls.cont()}>Continue</button>
                 </div>
-            </div>
+            </Row>
+            <Row>
+                <p>{state.triggersPerSecond}</p>
+                <input type="range" value={state.triggersPerSecond} max={1000 / 5} min={0.01} onChange={(e) => {changeTPS(Number(e.target.value))}}/>
+            </Row>
         </div>
     </div>
 

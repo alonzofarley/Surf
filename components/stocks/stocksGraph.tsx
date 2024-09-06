@@ -24,8 +24,9 @@ export function StocksGraph(props: StocksGraphProps) {
             axisTick: {
                 show: false, // Hide Ticks,
             },
-            boundaryGap: true,
-        },
+            splitLine:{ show: false },
+            axisLabel: { show: false },
+       },
         yAxis: {
             boundaryGap: true,
             type: 'value',

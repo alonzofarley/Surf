@@ -11,12 +11,14 @@ type StocksGamePageProps = {
 const initialChangeScalar = 2;
 const initialChangeScalarAcceleration = 0.04;
 const initialStartingPoints = 250;
+const initialTriggersPerSeconds = 3;
 
 const initialState: State = {
     data: [], 
     hasStopped: true, 
     changeScalar: initialChangeScalar, 
     changeScalarAcceleration: initialChangeScalarAcceleration, 
+    triggersPerSecond: initialTriggersPerSeconds,
     stats: {
         currentValue: NaN, 
         maxValue: Number.NEGATIVE_INFINITY, 
@@ -93,17 +95,15 @@ export function StocksGamePage(props: StocksGamePageProps) {
                 }
             }
             setStocksState(newState);
+        }, 
+        changeTPS: (tps: number) => {
+            let newState = {...stocksState,
+                triggersPerSecond: tps
+            }
+            setStocksState(newState);
         }
     }
-
-    // if(betViewVisible){
-    //     return <div className="container">
-    //         <div className="row">
-    //             <StocksChooseBet controls={controls} maxPossibleBet={stocksState.stats.currentTotalPoints}/>
-    //         </div>
-    //     </div>
-    // }
-
+    
     return <div className="container">
                 <div className="row">
                     <div className="col">

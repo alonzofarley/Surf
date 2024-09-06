@@ -5,6 +5,7 @@ export type Controls = {
     score: () => void, 
     shopEnded: () => void, 
     submitBet: (n: number) => void,
+    changeTPS: (tps: number) => void,
 }
 
 
@@ -14,6 +15,7 @@ export type State = {
     hasStopped: boolean, 
     changeScalar: number, 
     changeScalarAcceleration: number, 
+    triggersPerSecond: number,
 }
 
 

@@ -23,7 +23,7 @@ export function StocksChooseBet(props:StocksChooseBetProps) {
     }
 
     return <Modal show={props.visible} onHide={() => {}} backdrop="static" centered>
-            <Modal.Header closeButton>
+            <Modal.Header>
                 <Modal.Title>Bet</Modal.Title>
             </Modal.Header>
             <Modal.Body>
