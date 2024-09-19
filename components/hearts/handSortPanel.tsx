@@ -1,16 +1,14 @@
 import { CardType } from "@/utils/hearts/types";
 import { sortHand } from "@/utils/hearts/cardHelpers";
 import styles from "./../../styles/hearts.module.css";
+import { useHandControlContext } from "./players";
 
-type HandSortPanelProps = {
-  setHand: (h: CardType[]) => void;
-  hand: CardType[];
-};
+type HandSortPanelProps = {};
 
 export const HandSortPanel = (props: HandSortPanelProps) => {
-  //const hand = useHandContext();
-  const hand = props.hand;
-
+  const handControl = useHandControlContext();
+  const hand = handControl.hand;
+  const setHand = handControl.setHand;
   return (
     <div className={styles.sortPanel}>
       <label>Sort by</label>
@@ -18,7 +16,7 @@ export const HandSortPanel = (props: HandSortPanelProps) => {
         <button
           className={styles.sortPanelButton}
           onClick={() => {
-            props.setHand(sortHand("suit", hand));
+            setHand(sortHand("suit", hand));
           }}
         >
           Suit
@@ -26,7 +24,7 @@ export const HandSortPanel = (props: HandSortPanelProps) => {
         <button
           className={styles.sortPanelButton}
           onClick={() => {
-            props.setHand(sortHand("value", hand));
+            setHand(sortHand("value", hand));
           }}
         >
           Value

@@ -10,7 +10,6 @@ import { displayPlayerNumber } from "@/utils/hearts/cardHelpers";
 type PlayerProps = {
   player: PlayerType;
   isCurrentTurn: boolean;
-  setHand: (h: CardType[]) => void;
 };
 
 type SelectCard = (c: CardType) => void;
@@ -56,11 +55,7 @@ const Player = (props: PlayerProps) => {
         }
       >
         <h2>Player {displayPlayerNumber(player)}</h2>
-        {player.hand.length > 1 ? (
-          <Hand hand={player.hand} setHand={props.setHand} />
-        ) : (
-          <></>
-        )}
+        {player.hand.length > 1 ? <Hand /> : <></>}
         {selectedCard && props.isCurrentTurn ? (
           <button
             className={styles.playerPlayCardButton}

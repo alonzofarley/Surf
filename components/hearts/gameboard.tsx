@@ -37,8 +37,6 @@ export const GameBoard = () => {
   const [deck, setDeck] = useState(shuffleDeck(createDeck()));
   const [players, setPlayers] = useState(createPlayers(NUM_OF_PLAYERS)); // 4 players for Hearts
   const [currentTurn, setCurrentTurn] = useState(0);
-  //const [pool, setPool] = useState(createInitialPool(NUM_OF_PLAYERS));
-  //const [round, setRound] = useState(0);
   const [log, setLog] = useState([] as RoundHistory[]);
   const [roundInfo, setRoundInfo] = useState(
     createNewRoundInfo(NUM_OF_PLAYERS, 0)
@@ -143,7 +141,6 @@ export const GameBoard = () => {
         <div className={`${styles.playersPanel} ${styles.leftPanel}`}>
           <h1>Hearts Game</h1>
           <button onClick={deal}>Deal Cards</button>
-          <div>Current Turn: Player {currentTurn + 1}</div>
           <Players
             currentTurn={currentTurn}
             players={players}
@@ -172,14 +169,3 @@ export const usePlayCardContext = () => {
   }
   return playCard;
 };
-
-// //Might need to move this to player in the future, depending on how things go
-// export const HandContext = createContext<CardType[] | undefined>(undefined);
-
-// export const useHandContext = () => {
-//   const hand = useContext(HandContext);
-//   if (hand == undefined) {
-//     throw Error("useHandContext must be used within a HandContext.Provider");
-//   }
-//   return hand;
-// };
