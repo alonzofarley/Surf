@@ -3,68 +3,65 @@ import Peg from "@/components/paths/peg";
 import test from "node:test";
 import { CSSProperties } from "react";
 import { Col, Container, Row } from "react-bootstrap";
-import '../styles/paths.css'
 
 const cellHeight = 50;
 const cellWidth = 50;
 
 const Blank = () => {
-    return <td className="blank"></td>;
-  };
-  
-  const Square = () => {
-    return (
-      <td className="square-cell">
-        <div className="square"></div>
-      </td>
-    );
-  };
-  
-  const Circle = () => {
-    return (
-      <td className="circle-cell">
-        <div className="circle"></div>
-      </td>
-    );
-  };
-  
-  const TableComponent = () => {
-    const rows = 7;
-    const cols = 7;
-  
-    const renderCell = (row: number, col: number) => {
-      if (row % 2 === 0) {
-        return col % 2 === 0 ? <Circle key={col} /> : <Blank key={col} />;
-      } else {
-        return col % 2 === 0 ? <Blank key={col} /> : <Square key={col} />;
-      }
-    };
-  
-    return (
-      <table className="custom-table">
-        <tbody>
-          {Array.from({ length: rows }).map((_, rowIndex) => (
-            <tr key={rowIndex}>
-              {Array.from({ length: cols }).map((_, colIndex) => renderCell(rowIndex, colIndex))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
+  return <td className="blank"></td>;
+};
+
+const Square = () => {
+  return (
+    <td className="square-cell">
+      <div className="square"></div>
+    </td>
+  );
+};
+
+const Circle = () => {
+  return (
+    <td className="circle-cell">
+      <div className="circle"></div>
+    </td>
+  );
+};
+
+const TableComponent = () => {
+  const rows = 7;
+  const cols = 7;
+
+  const renderCell = (row: number, col: number) => {
+    if (row % 2 === 0) {
+      return col % 2 === 0 ? <Circle key={col} /> : <Blank key={col} />;
+    } else {
+      return col % 2 === 0 ? <Blank key={col} /> : <Square key={col} />;
+    }
   };
 
+  return (
+    <table className="custom-table">
+      <tbody>
+        {Array.from({ length: rows }).map((_, rowIndex) => (
+          <tr key={rowIndex}>
+            {Array.from({ length: cols }).map((_, colIndex) =>
+              renderCell(rowIndex, colIndex)
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
 
 export default function Paths() {
-    return <TableComponent />
+  return <TableComponent />;
 }
 //     const placeholder = [
-//         [1, 2, 3], 
-//         [4, 5, 6], 
+//         [1, 2, 3],
+//         [4, 5, 6],
 //         [7, 8, 9]
 //     ]
-
-    
-
 
 //     type Cell = "cell";
 //     type Peg = "peg";
@@ -86,7 +83,7 @@ export default function Paths() {
 //     const colStyle: CSSProperties = {
 //         padding: 0,
 //         margin: 2,
-//         height: cellHeight, 
+//         height: cellHeight,
 //         width: cellWidth,
 //         flex: 'none'
 //     }
@@ -105,16 +102,16 @@ export default function Paths() {
 //         // alignItems: "center",
 //         // gap: 10,
 //         border: 10,
-//         borderStyle: 'solid', 
-//         borderColor: 'gray', 
+//         borderStyle: 'solid',
+//         borderColor: 'gray',
 //     }
 
 //     let pegStyle = {
-        
-//     }   
+
+//     }
 
 //     let blankStyle = {
-        
+
 //     }
 
 //     let testContainer2 = <>
@@ -137,7 +134,7 @@ export default function Paths() {
 //                             </div>
 //                     }
 //                 })}
-//               </div>  
+//               </div>
 //             })}
 //         </div>
 //     </>
@@ -146,5 +143,3 @@ export default function Paths() {
 //         {testContainer2}
 //     </>
 // }
-
-
