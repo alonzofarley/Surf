@@ -1,8 +1,15 @@
 import { CardText } from "react-bootstrap";
-import { CardType, PlayerType, PoolType, RoundInfo, Suit } from "./types";
+import {
+  CardType,
+  PlayerControl,
+  PlayerType,
+  PoolType,
+  RoundInfo,
+  Suit
+} from "./types";
 
-const ACE_IS_HIGH = true;
-const ACE_IS_NOT_HIGH = false;
+export const ACE_IS_HIGH = true;
+export const ACE_IS_NOT_HIGH = false;
 
 export const cardValueToNum = (cardValue: string, aceIsHigh: boolean) => {
   let numberVal = Number(cardValue);
@@ -77,7 +84,7 @@ export const cardComparatorBySuitThenValue =
 
 // if compare (a, b) < 0 sort a higher than b
 export const cardComparatorForRound =
-  (leadingSuit: Suit) => (c1: CardType, c2: CardType) => {
+  (leadingSuit: Suit | "none") => (c1: CardType, c2: CardType) => {
     if (c1.suit != leadingSuit && c2.suit != leadingSuit) {
       return 0;
     }
@@ -88,6 +95,11 @@ export const cardComparatorForRound =
       return -1;
     }
     return -cardComparatorByValue(ACE_IS_HIGH)(c1, c2);
+  };
+
+export const cardComparatorForRoundInverted =
+  (leadingSuit: Suit | "none") => (c1: CardType, c2: CardType) => {
+    return cardComparatorForRound(leadingSuit)(c2, c1);
   };
 
 export const sortPlayersByLeadingPlayer = (
@@ -141,7 +153,8 @@ export const shuffleDeck = (deck: CardType[]) => {
 export const createPlayers = (numPlayers: number) => {
   let players: PlayerType[] = [];
   for (let i = 0; i < numPlayers; i++) {
-    players.push({ id: i, hand: [] });
+    let typeOfPlayer: PlayerControl = i == 0 ? "User" : "AI";
+    players.push({ id: i, hand: [], typeOfPlayer: typeOfPlayer });
   }
   return players;
 };

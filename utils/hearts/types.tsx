@@ -3,9 +3,12 @@ export type CardType = {
   value: string;
 };
 
+export type PlayerControl = "User" | "AI";
+
 export type PlayerType = {
   id: number;
   hand: CardType[];
+  typeOfPlayer: PlayerControl;
 };
 
 export type PoolType = {
