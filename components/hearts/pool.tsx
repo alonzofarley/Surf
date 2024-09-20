@@ -1,17 +1,24 @@
 import React, { useState } from "react";
 import Card, { displayCard } from "./card";
-import { CardType, PlayerType, PoolType } from "@/utils/hearts/types";
+import {
+  CardType,
+  PlayerType,
+  PoolType,
+  RoundInfo
+} from "@/utils/hearts/types";
 import { Accordion, Button } from "react-bootstrap";
 import styles from "./../../styles/hearts.module.css";
 import { Hand } from "./hand";
 import { displayPlayerNumberFromId } from "@/utils/hearts/cardHelpers";
 
 type PoolViewProps = {
-  pool: PoolType;
+  roundInfo: RoundInfo;
 };
 
 export const PoolView = (props: PoolViewProps) => {
-  const pool = props.pool;
+  const pool = props.roundInfo.pool;
+  const winner = props.roundInfo.winner;
+  const leadingPlayerId = props.roundInfo.leading.player;
 
   return (
     <div className={styles.pool}>
@@ -30,12 +37,23 @@ export const PoolView = (props: PoolViewProps) => {
                 </li>
               );
             }
-            return (
-              <li key={i}>
-                Player {displayedPlayerId}
-                {displayCard(playedCard)}
-              </li>
-            );
+
+            if (leadingPlayerId == playerId) {
+              return (
+                <li key={i}>
+                  {winner == playerId ? <>* Winner * </> : <></>}
+                  Player {displayedPlayerId} led with
+                  {displayCard(playedCard)}
+                </li>
+              );
+            } else {
+              return (
+                <li key={i}>
+                  {winner == playerId ? <>* Winner * </> : <></>}
+                  Player {displayedPlayerId} {displayCard(playedCard)}
+                </li>
+              );
+            }
           })}
         </ul>
       </div>

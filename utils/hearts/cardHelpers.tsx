@@ -1,15 +1,18 @@
 import { CardText } from "react-bootstrap";
 import {
   CardType,
+  Log,
   PlayerControl,
   PlayerType,
   PoolType,
+  RoundHistory,
   RoundInfo,
   Suit
 } from "./types";
 
 export const ACE_IS_HIGH = true;
 export const ACE_IS_NOT_HIGH = false;
+export const NUM_OF_PLAYERS = 4;
 
 export const cardValueToNum = (cardValue: string, aceIsHigh: boolean) => {
   let numberVal = Number(cardValue);
@@ -239,4 +242,121 @@ export const removeCardFromPlayer = (
     ...player,
     hand: [...newHand]
   };
+};
+
+export const adjudicateFinishedRound = (
+  previousRoundInfo: RoundInfo,
+  previousPlayers: PlayerType[],
+  previousLog: Log
+) => {
+  if (previousRoundInfo.winner == undefined) {
+    throw Error(
+      "'adjudicateFinishedRound()' should only be called if there was a winner determined last round"
+    );
+  }
+
+  //TODO: should probably change how this is done later.
+  let currentRoundHistory = previousLog.history.slice(-1)[0];
+  currentRoundHistory = {
+    ...currentRoundHistory,
+    roundHistories: [
+      ...currentRoundHistory.roundHistories,
+      {
+        roundInfo: {
+          ...previousRoundInfo,
+          winner: previousRoundInfo.winner
+        }
+      }
+    ]
+  };
+  let updatedLog: Log = {
+    history: [...previousLog.history.slice(0, -1), currentRoundHistory]
+  };
+  // [
+  //   ...previousLog,
+  //   {
+  //     roundInfo: {
+  //       ...previousRoundInfo,
+  //       winner: previousRoundInfo.winner
+  //     }
+  //   }
+  // ];
+
+  let updatedCurrentTurn = previousRoundInfo.winner;
+
+  let updatedRoundInfo = createNewRoundInfo(
+    NUM_OF_PLAYERS,
+    previousRoundInfo.roundNumber + 1
+  );
+  return {
+    updatedPlayers: previousPlayers,
+    updatedRoundInfo: updatedRoundInfo,
+    updatedCurrentTurn: updatedCurrentTurn,
+    updatedLog: updatedLog
+  };
+};
+
+export const playCardHelper =
+  (pid: PlayerType["id"], card: CardType) =>
+  async (
+    previousRoundInfo: RoundInfo,
+    previousPlayers: PlayerType[],
+    previousTurn: number,
+    previousLog: Log
+  ) => {
+    let isLeadingPlay = Object.values(previousRoundInfo.pool).every(
+      (playedCard) => playedCard == undefined
+    );
+    const newPool = { ...previousRoundInfo.pool, [pid]: card };
+    console.log(
+      `Player ${displayPlayerNumberFromId(pid)} played ${textOfCard(card)}`
+    );
+    let updatedRoundInfo = {
+      ...previousRoundInfo,
+      pool: newPool
+    };
+
+    if (isLeadingPlay) {
+      updatedRoundInfo = {
+        ...updatedRoundInfo,
+        leading: {
+          player: pid,
+          card: card
+        }
+      };
+    }
+    let updatedPlayers = previousPlayers.map((player) => {
+      if (pid != player.id) return player;
+
+      let playedCard = updatedRoundInfo.pool[pid];
+      if (playedCard == undefined) {
+        throw Error("Played Card is undefined");
+      }
+
+      return removeCardFromPlayer(player, playedCard);
+    });
+
+    let winner = Object.values(updatedRoundInfo.pool).every(
+      (playedCard) => playedCard != undefined
+    )
+      ? determinePoolWinner(updatedRoundInfo)
+      : undefined;
+
+    let updatedCurrentTurn = (previousTurn + 1) % 4;
+    let updatedLog = previousLog;
+    updatedRoundInfo = {
+      ...updatedRoundInfo,
+      winner: winner?.playerId
+    };
+
+    return {
+      updatedPlayers: updatedPlayers,
+      updatedRoundInfo: updatedRoundInfo,
+      updatedCurrentTurn: updatedCurrentTurn,
+      updatedLog: updatedLog
+    };
+  };
+
+export const reverseList = (list: any[]): any[] => {
+  return list.slice().reverse();
 };

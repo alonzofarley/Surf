@@ -19,7 +19,6 @@ export type Suit = "hearts" | "diamonds" | "clubs" | "spades";
 
 export type RoundHistory = {
   roundInfo: RoundInfo;
-  winner: PlayerType["id"];
 };
 
 export type RoundInfo = {
@@ -29,4 +28,14 @@ export type RoundInfo = {
     player: PlayerType["id"] | undefined;
     card: CardType | undefined;
   };
+  winner: PlayerType["id"] | undefined;
+};
+
+export type HandHistory = {
+  handNumber: number;
+  roundHistories: RoundHistory[];
+};
+
+export type Log = {
+  history: HandHistory[];
 };

@@ -55,8 +55,14 @@ const Player = (props: PlayerProps) => {
         }
       >
         <h2>Player {displayPlayerNumber(player)}</h2>
-        {player.hand.length > 1 ? <Hand /> : <></>}
-        {selectedCard && props.isCurrentTurn ? (
+        {player.hand.length > 0 && player.typeOfPlayer == "User" ? (
+          <Hand />
+        ) : (
+          <></>
+        )}
+        {selectedCard &&
+        props.isCurrentTurn &&
+        props.player.typeOfPlayer == "User" ? (
           <button
             className={styles.playerPlayCardButton}
             onClick={handlePlayCard}

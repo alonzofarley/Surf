@@ -4,6 +4,7 @@ import Player from "./player";
 import styles from "./../../styles/hearts.module.css";
 import {
   CardType,
+  Log,
   PlayerType,
   PoolType,
   RoundHistory,
@@ -12,6 +13,8 @@ import {
 } from "@/utils/hearts/types";
 import { PoolView } from "./pool";
 import {
+  NUM_OF_PLAYERS,
+  adjudicateFinishedRound,
   cardComparatorForRound,
   createDeck,
   createNewRoundInfo,
@@ -21,52 +24,149 @@ import {
   displayPlayerNumberFromId,
   distributeCardsFromDeck,
   getPoolPids,
+  playCardHelper,
   removeCardFromPlayer,
   shuffleDeck,
   textOfCard
 } from "@/utils/hearts/cardHelpers";
 import { LogView } from "./log";
 import { Players } from "./players";
-import { aiPlay, delay } from "@/utils/hearts/aiControl";
+import {
+  AI_MOVE_DELAY,
+  RESOLVE_WINNER_DELAY,
+  aiPlay,
+  delay
+} from "@/utils/hearts/aiControl";
+import { flushSync } from "react-dom";
 
-const NUM_OF_PLAYERS = 4;
 export type PlayCardCallback = (
   pid: PlayerType["id"]
 ) => (card: CardType) => void;
 
 export const GameBoard = () => {
-  const [deck, setDeck] = useState(shuffleDeck(createDeck()));
+  const [deck, setDeck] = useState([] as CardType[]);
   const [players, setPlayers]: [
     PlayerType[],
     Dispatch<React.SetStateAction<PlayerType[]>>
   ] = useState(createPlayers(NUM_OF_PLAYERS)); // 4 players for Hearts
   const [currentTurn, setCurrentTurn] = useState(0);
-  const [log, setLog] = useState([] as RoundHistory[]);
+  const [log, setLog] = useState({ history: [] } as Log);
   const [roundInfo, setRoundInfo] = useState(
     createNewRoundInfo(NUM_OF_PLAYERS, 0)
   );
+  const [handInProgress, setHandInProgress] = useState(false);
+  const [handCount, setHandCount] = useState(0);
+  const [handFirstTurn, setHandFirstTurn] = useState(0);
 
   let deal = () => {
     let { remainingDeck, updatedPlayers } = distributeCardsFromDeck(
-      deck,
+      shuffleDeck(createDeck()),
       players
     );
-    setDeck(remainingDeck);
-    setPlayers(updatedPlayers);
+    flushSync(() => {
+      setDeck(remainingDeck);
+      setPlayers(updatedPlayers);
+      setHandInProgress(true);
+      setHandCount((hc) => hc + 1);
+      setCurrentTurn(handFirstTurn);
+      setLog({
+        history: [
+          ...log.history,
+          {
+            handNumber: handCount + 1,
+            roundHistories: []
+          }
+        ]
+      });
+    });
+    stepPlayCard(0, createDummyCardToNeverBeUsed, true);
   };
 
-  const stepPlayCard = async (pid: PlayerType["id"], card: CardType) => {
-    let { updatedPlayers, updatedRoundInfo, updatedCurrentTurn, updatedLog } =
-      await playCardHelper(pid, card)(roundInfo, players, currentTurn, log);
+  let createDummyCardToNeverBeUsed: CardType = {
+    suit: "diamonds",
+    value: "A"
+  };
 
-    while (updatedCurrentTurn != 0) {
-      console.log(
-        "Ai Turn - data before they choose",
-        updatedCurrentTurn,
-        updatedPlayers,
+  const stepPlayCard = async (
+    pid: PlayerType["id"],
+    card: CardType,
+    advanceAIPlayersOnly: boolean = false
+  ) => {
+    let updatedPlayers = players;
+    let updatedRoundInfo = roundInfo;
+    let updatedCurrentTurn = currentTurn;
+    let updatedLog = log;
+
+    if (!advanceAIPlayersOnly) {
+      // let { updatedPlayers, updatedRoundInfo, updatedCurrentTurn, updatedLog } =
+      //   await playCardHelper(pid, card)(roundInfo, players, currentTurn, log);
+
+      let updates = await playCardHelper(pid, card)(
         updatedRoundInfo,
+        updatedPlayers,
+        updatedCurrentTurn,
         updatedLog
       );
+      updatedPlayers = updates.updatedPlayers;
+      updatedRoundInfo = updates.updatedRoundInfo;
+      updatedCurrentTurn = updates.updatedCurrentTurn;
+      updatedLog = updates.updatedLog;
+
+      flushSync(() => {
+        setCurrentTurn(updatedCurrentTurn);
+      });
+      flushSync(() => {
+        setPlayers(updatedPlayers);
+      });
+      flushSync(() => {
+        setRoundInfo(updatedRoundInfo);
+      });
+      flushSync(() => {
+        setLog(updatedLog);
+      });
+    }
+    let handOver = false;
+
+    while (
+      (updatedCurrentTurn != 0 || updatedRoundInfo.winner != undefined) &&
+      !handOver
+    ) {
+      if (updatedRoundInfo.winner != undefined) {
+        await delay(RESOLVE_WINNER_DELAY);
+        let updates = adjudicateFinishedRound(
+          updatedRoundInfo,
+          updatedPlayers,
+          updatedLog
+        );
+
+        updatedPlayers = updates.updatedPlayers;
+        updatedRoundInfo = updates.updatedRoundInfo;
+        updatedCurrentTurn = updates.updatedCurrentTurn;
+        updatedLog = updates.updatedLog;
+        flushSync(() => {
+          setCurrentTurn(updatedCurrentTurn);
+        });
+        flushSync(() => {
+          setPlayers(updatedPlayers);
+        });
+        flushSync(() => {
+          setRoundInfo(updatedRoundInfo);
+        });
+        flushSync(() => {
+          setLog(updatedLog);
+        });
+
+        handOver = updatedPlayers.every((p) => p.hand.length == 0);
+        console.log(
+          "Check if HandOver",
+          handOver,
+          updatedPlayers.map((p) => p.hand)
+        );
+
+        continue;
+      }
+
+      await delay(AI_MOVE_DELAY);
       let aiPlayer = updatedPlayers[updatedCurrentTurn];
       let playedCard = aiPlay(aiPlayer, updatedRoundInfo);
       let updates = await playCardHelper(aiPlayer.id, playedCard)(
@@ -79,29 +179,32 @@ export const GameBoard = () => {
       updatedRoundInfo = updates.updatedRoundInfo;
       updatedCurrentTurn = updates.updatedCurrentTurn;
       updatedLog = updates.updatedLog;
-      console.log(
-        "Ai Turn - data after they choose",
-        updatedCurrentTurn,
-        updatedPlayers,
-        updatedRoundInfo,
-        updatedLog
-      );
-      //alert("waiting a second");
-      //await delay(2000);
+
+      flushSync(() => {
+        setCurrentTurn(updatedCurrentTurn);
+      });
+      flushSync(() => {
+        setPlayers(updatedPlayers);
+      });
+      flushSync(() => {
+        setRoundInfo(updatedRoundInfo);
+      });
+      flushSync(() => {
+        setLog(updatedLog);
+      });
     }
-
+    console.log("Check if HandOver", handOver);
     console.log(
-      "Player Turn",
-      updatedCurrentTurn,
-      updatedPlayers,
-      updatedRoundInfo,
-      updatedLog
+      "player hands",
+      updatedPlayers.map((p) => p.hand)
     );
-
-    setCurrentTurn(updatedCurrentTurn);
-    setPlayers(updatedPlayers);
-    setRoundInfo(updatedRoundInfo);
-    setLog(updatedLog);
+    if (handOver) {
+      //End Game, wait for next hand
+      flushSync(() => {
+        setHandInProgress(false);
+        setHandFirstTurn((hft) => (hft + 1) % 4);
+      });
+    }
   };
 
   const playCard: PlayCardCallback = (pid) => async (card) => {
@@ -125,7 +228,11 @@ export const GameBoard = () => {
       <PlayCardContext.Provider value={playCard}>
         <div className={`${styles.playersPanel} ${styles.leftPanel}`}>
           <h1>Hearts Game</h1>
-          <button onClick={deal}>Deal Cards</button>
+          {!handInProgress ? (
+            <button onClick={deal}>Deal Cards</button>
+          ) : (
+            <h1>Hand #{handCount}</h1>
+          )}
           <Players
             currentTurn={currentTurn}
             players={players}
@@ -135,8 +242,10 @@ export const GameBoard = () => {
       </PlayCardContext.Provider>
       <div className={styles.rightPanel}>
         <h3>Round {roundInfo.roundNumber + 1}</h3>
-        <PoolView pool={roundInfo.pool} />
-        <LogView log={log} />
+        <div className={styles.rightPanelPoolAndLog}>
+          <PoolView roundInfo={roundInfo} />
+          <LogView log={log} />
+        </div>
       </div>
     </div>
   );
@@ -154,76 +263,3 @@ export const usePlayCardContext = () => {
   }
   return playCard;
 };
-
-const playCardHelper =
-  (pid: PlayerType["id"], card: CardType) =>
-  async (
-    previousRoundInfo: RoundInfo,
-    previousPlayers: PlayerType[],
-    previousTurn: number,
-    previousLog: RoundHistory[]
-  ) => {
-    let isLeadingPlay = Object.values(previousRoundInfo.pool).every(
-      (playedCard) => playedCard == undefined
-    );
-    const newPool = { ...previousRoundInfo.pool, [pid]: card };
-    console.log(
-      `Player ${displayPlayerNumberFromId(pid)} played ${textOfCard(card)}`
-    );
-    let updatedRoundInfo = {
-      ...previousRoundInfo,
-      pool: newPool
-    };
-
-    if (isLeadingPlay) {
-      updatedRoundInfo = {
-        ...updatedRoundInfo,
-        leading: {
-          player: pid,
-          card: card
-        }
-      };
-    }
-    let updatedPlayers = previousPlayers.map((player) => {
-      if (pid != player.id) return player;
-
-      let playedCard = updatedRoundInfo.pool[pid];
-      if (playedCard == undefined) {
-        throw Error("Played Card is undefined");
-      }
-
-      return removeCardFromPlayer(player, playedCard);
-    });
-
-    let winner = Object.values(updatedRoundInfo.pool).every(
-      (playedCard) => playedCard != undefined
-    )
-      ? determinePoolWinner(updatedRoundInfo)
-      : undefined;
-
-    let updatedCurrentTurn = (previousTurn + 1) % 4;
-    let updatedLog = previousLog;
-    if (winner != undefined) {
-      updatedCurrentTurn = winner.playerId;
-      updatedLog = [
-        ...previousLog,
-        {
-          roundInfo: {
-            ...updatedRoundInfo
-          },
-          winner: winner.playerId
-        }
-      ];
-      updatedRoundInfo = createNewRoundInfo(
-        NUM_OF_PLAYERS,
-        updatedRoundInfo.roundNumber + 1
-      );
-    }
-
-    return {
-      updatedPlayers: updatedPlayers,
-      updatedRoundInfo: updatedRoundInfo,
-      updatedCurrentTurn: updatedCurrentTurn,
-      updatedLog: updatedLog
-    };
-  };
