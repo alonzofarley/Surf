@@ -70,7 +70,6 @@ export const GameBoard = () => {
     let GameState = localStorage.getItem(LOCAL_STORAGE_GAME_KEY_STRING);
     if (GameState) {
       let parsedGameState = JSON.parse(GameState);
-      console.log(parsedGameState.handInProgress);
       flushSync(() => {
         setDeck(parsedGameState.deck);
         setPlayers(parsedGameState.players);
@@ -96,23 +95,36 @@ export const GameBoard = () => {
       shuffleDeck(createDeck()),
       players
     );
+    let newHandCount = handCount + 1;
+    let newLog = {
+      history: [
+        ...log.history,
+        {
+          handNumber: newHandCount,
+          roundHistories: []
+        }
+      ]
+    };
+    let newRoundInfo: RoundInfo = { ...roundInfo, roundNumber: 0 };
+    let newCurrentTurn = handFirstTurn;
     flushSync(() => {
       setDeck(remainingDeck);
       setPlayers(updatedPlayers);
       setHandInProgress(true);
-      setHandCount((hc) => hc + 1);
-      setCurrentTurn(handFirstTurn);
-      setLog({
-        history: [
-          ...log.history,
-          {
-            handNumber: handCount + 1,
-            roundHistories: []
-          }
-        ]
-      });
+      setHandCount(newHandCount);
+      setCurrentTurn(newCurrentTurn);
+      setRoundInfo(newRoundInfo);
+      setLog(newLog);
     });
-    stepPlayCard(0, createDummyCardToNeverBeUsed, true);
+    stepPlayCard(
+      0,
+      createDummyCardToNeverBeUsed,
+      updatedPlayers,
+      newRoundInfo,
+      newCurrentTurn,
+      newLog,
+      true
+    );
   };
 
   let createDummyCardToNeverBeUsed: CardType = {
@@ -124,12 +136,16 @@ export const GameBoard = () => {
   const stepPlayCard = async (
     pid: PlayerType["id"],
     card: CardType,
+    previousPlayers: PlayerType[],
+    previousRoundInfo: RoundInfo,
+    previousTurn: number,
+    previousLog: Log,
     advanceAIPlayersOnly: boolean = false
   ) => {
-    let updatedPlayers = players;
-    let updatedRoundInfo = roundInfo;
-    let updatedCurrentTurn = currentTurn;
-    let updatedLog = log;
+    let updatedPlayers = previousPlayers;
+    let updatedRoundInfo = previousRoundInfo;
+    let updatedCurrentTurn = previousTurn;
+    let updatedLog = previousLog;
 
     if (!advanceAIPlayersOnly) {
       let updates = await playCardHelper(pid, card)(
@@ -145,17 +161,12 @@ export const GameBoard = () => {
 
       flushSync(() => {
         setCurrentTurn(updatedCurrentTurn);
-      });
-      flushSync(() => {
         setPlayers(updatedPlayers);
-      });
-      flushSync(() => {
         setRoundInfo(updatedRoundInfo);
-      });
-      flushSync(() => {
         setLog(updatedLog);
       });
     }
+
     let handOver = false;
 
     while (
@@ -176,24 +187,12 @@ export const GameBoard = () => {
         updatedLog = updates.updatedLog;
         flushSync(() => {
           setCurrentTurn(updatedCurrentTurn);
-        });
-        flushSync(() => {
           setPlayers(updatedPlayers);
-        });
-        flushSync(() => {
           setRoundInfo(updatedRoundInfo);
-        });
-        flushSync(() => {
           setLog(updatedLog);
         });
 
         handOver = updatedPlayers.every((p) => p.hand.length == 0);
-        console.log(
-          "Check if HandOver",
-          handOver,
-          updatedPlayers.map((p) => p.hand)
-        );
-
         continue;
       }
 
@@ -234,7 +233,7 @@ export const GameBoard = () => {
   };
 
   const playCard: PlayCardCallback = (pid) => async (card) => {
-    await stepPlayCard(pid, card);
+    await stepPlayCard(pid, card, players, roundInfo, currentTurn, log);
   };
 
   const setHand: (p: PlayerType) => (h: CardType[]) => void =
@@ -297,9 +296,9 @@ export const GameBoard = () => {
           <div className={`${styles.playersPanel} ${styles.leftPanel}`}>
             <h1>Hearts Game</h1>
             {!handInProgress ? (
-              <button onClick={deal}>Deal Cards</button>
+              <button onClick={deal}>Next Hand</button>
             ) : (
-              <h1>Hand #{handCount}</h1>
+              <></>
             )}
             <CurrentHighlightedCardContext.Provider
               value={{ highlightedCard, setHighlightedCard }}
@@ -313,6 +312,7 @@ export const GameBoard = () => {
           </div>
         </PlayCardStateContext.Provider>
         <div className={styles.rightPanel}>
+          <h3>Hand {handCount}</h3>
           <h3>Round {roundInfo.roundNumber + 1}</h3>
           <div className={styles.rightPanelPoolAndLog}>
             <CurrentHighlightedCardContext.Provider

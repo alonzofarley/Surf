@@ -254,7 +254,6 @@ export const removeCardFromPlayer = (
   );
 
   let newHand = [...player.hand].filter((card) => card != playedCard);
-  console.log([...player.hand], [...newHand]);
 
   return {
     ...player,
@@ -308,6 +307,9 @@ export const adjudicateFinishedRound = (
 
   //TODO: should probably change how this is done later.
   let currentRoundHistory = previousLog.history.slice(-1)[0];
+  console.log(currentRoundHistory);
+  console.log(previousLog);
+
   currentRoundHistory = {
     ...currentRoundHistory,
     roundHistories: [
@@ -320,6 +322,7 @@ export const adjudicateFinishedRound = (
       }
     ]
   };
+
   let updatedLog: Log = {
     history: [...previousLog.history.slice(0, -1), currentRoundHistory]
   };
