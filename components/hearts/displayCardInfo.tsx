@@ -1,6 +1,7 @@
 import { displayCard } from "./card";
 import { useCurrentHighlightedCardContext } from "./gameboard";
 import styles from "./../../styles/hearts.module.css";
+import { getEditionDescription } from "@/utils/hearts/cardHelpers";
 
 type DisplayCardInfoProps = {};
 export const DisplayCardInfo = (props: DisplayCardInfoProps) => {
@@ -25,10 +26,15 @@ export const DisplayCardInfo = (props: DisplayCardInfoProps) => {
         <div>
           <h6>Edition </h6>
           <div>
-            {highlightedCard.edition.type}{" "}
-            {highlightedCard.edition.type == "none"
-              ? ""
-              : highlightedCard.edition.rarity}
+            <label>Name:</label>
+            <p>
+              {highlightedCard.edition.type}{" "}
+              {highlightedCard.edition.type == "none"
+                ? ""
+                : highlightedCard.edition.rarity}
+            </p>
+            <label>Description:</label>
+            <p>{getEditionDescription(highlightedCard.edition)}</p>
           </div>
         </div>
       </div>

@@ -245,6 +245,53 @@ const attachRarityToEdition = (
             rarity: "common"
           };
       }
+    case "swap_low_and_high":
+      switch (rarity) {
+        case "common":
+          return {
+            type: "swap_low_and_high",
+            rarity: "common"
+          };
+        case "uncommon":
+          return {
+            type: "swap_low_and_high",
+            rarity: "uncommon"
+          };
+        case "rare":
+          return {
+            type: "swap_low_and_high",
+            rarity: "rare"
+          };
+        case "legendary":
+          return {
+            type: "swap_low_and_high",
+            rarity: "legendary"
+          };
+      }
+    case "healing":
+      switch (rarity) {
+        case "common":
+          return {
+            type: "healing",
+            rarity: "common"
+          };
+        case "uncommon":
+          return {
+            type: "healing",
+            rarity: "uncommon"
+          };
+        case "rare":
+          return {
+            type: "healing",
+            rarity: "rare"
+          };
+        case "legendary":
+          return {
+            type: "healing",
+            rarity: "legendary"
+          };
+      }
+
     default:
       throw Error("not valid card edition");
   }

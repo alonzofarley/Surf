@@ -8,7 +8,8 @@ import {
   PlayerInventory,
   PlayerType,
   PlayersState,
-  RoundInfo
+  RoundInfo,
+  Suit
 } from "@/utils/hearts/types";
 import { PoolView } from "./pool";
 import {
@@ -131,9 +132,6 @@ export const GameBoard = () => {
     let updatedLog = log;
 
     if (!advanceAIPlayersOnly) {
-      // let { updatedPlayers, updatedRoundInfo, updatedCurrentTurn, updatedLog } =
-      //   await playCardHelper(pid, card)(roundInfo, players, currentTurn, log);
-
       let updates = await playCardHelper(pid, card)(
         updatedRoundInfo,
         updatedPlayers,
@@ -226,11 +224,6 @@ export const GameBoard = () => {
         setLog(updatedLog);
       });
     }
-    console.log("Check if HandOver", handOver);
-    console.log(
-      "player hands",
-      updatedPlayers.map((p) => p.hand)
-    );
     if (handOver) {
       //End Game, wait for next hand
       flushSync(() => {
@@ -295,7 +288,12 @@ export const GameBoard = () => {
   return (
     <div className={styles.gameboard}>
       <div className={styles.gameboardMain}>
-        <PlayCardContext.Provider value={playCard}>
+        <PlayCardStateContext.Provider
+          value={{
+            playCardCallback: playCard,
+            leadingSuit: roundInfo.leading.card?.suit
+          }}
+        >
           <div className={`${styles.playersPanel} ${styles.leftPanel}`}>
             <h1>Hearts Game</h1>
             {!handInProgress ? (
@@ -313,7 +311,7 @@ export const GameBoard = () => {
               />
             </CurrentHighlightedCardContext.Provider>
           </div>
-        </PlayCardContext.Provider>
+        </PlayCardStateContext.Provider>
         <div className={styles.rightPanel}>
           <h3>Round {roundInfo.roundNumber + 1}</h3>
           <div className={styles.rightPanelPoolAndLog}>
@@ -388,17 +386,22 @@ export const GameBoard = () => {
   );
 };
 
-export const PlayCardContext = createContext<PlayCardCallback | undefined>(
+type PlayCardState = {
+  playCardCallback: PlayCardCallback;
+  leadingSuit: Suit | undefined;
+};
+
+export const PlayCardStateContext = createContext<PlayCardState | undefined>(
   undefined
 );
-export const usePlayCardContext = () => {
-  const playCard = useContext(PlayCardContext);
-  if (playCard == undefined) {
+export const usePlayCardStateContext = () => {
+  const playCardState = useContext(PlayCardStateContext);
+  if (playCardState == undefined) {
     throw Error(
-      "usePlayCardContext must be used within a PlayCardContext.Provider"
+      "usePlayCardStateContext must be used within a PlayCarPlayCardStateContextdContext.Provider"
     );
   }
-  return playCard;
+  return playCardState;
 };
 
 export const PlayersContext = createContext<PlayersState | undefined>(

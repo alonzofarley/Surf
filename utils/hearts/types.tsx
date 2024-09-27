@@ -3,7 +3,9 @@ import React from "react";
 export let EditionConst = [
   "extra_damage",
   "switch_cards",
-  "extra_chips"
+  "extra_chips",
+  "swap_low_and_high",
+  "healing"
 ] as const;
 
 export let EditionRarity = [
@@ -27,6 +29,10 @@ export type SwapCardsEdition = {
   type: "switch_cards";
 } & Edition;
 
+export type SwapLowAndHighEdition = {
+  type: "swap_low_and_high";
+} & Edition;
+
 export type ExtraChips = {
   type: "extra_chips";
 } & Edition;
@@ -37,12 +43,14 @@ export type NoEdition = {
 
 export type HealEdition = {
   type: "healing";
-};
+} & Edition;
 
 export type CardEdition =
   | ExtraDamageEdition
   | SwapCardsEdition
   | ExtraChips
+  | HealEdition
+  | SwapLowAndHighEdition
   | NoEdition;
 
 export type EditionTypeType = CardEdition["type"];

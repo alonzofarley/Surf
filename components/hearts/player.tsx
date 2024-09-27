@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState } from "react";
 import { CardType, PlayerType } from "@/utils/hearts/types";
 import styles from "./../../styles/hearts.module.css";
 import { Hand } from "./hand";
-import { usePlayCardContext } from "./gameboard";
+import { usePlayCardStateContext } from "./gameboard";
 import { MAX_HEALTH, displayPlayerNumber } from "@/utils/hearts/cardHelpers";
 
 type PlayerProps = {
@@ -19,7 +19,9 @@ type CardSelectionControl = {
 
 const Player = (props: PlayerProps) => {
   const player = props.player;
-  const playCard = usePlayCardContext();
+  const playCardState = usePlayCardStateContext();
+  const playCard = playCardState.playCardCallback;
+  const leadingSuit = playCardState.leadingSuit;
 
   const [selectedCard, setSelectedCard] = useState(
     undefined as CardType | undefined
@@ -37,16 +39,25 @@ const Player = (props: PlayerProps) => {
         alert("Must select a card");
         return;
       }
+
+      //If player could play a card of the leading suit but decides not to
+      if (
+        leadingSuit != undefined &&
+        selectedCard.suit != leadingSuit &&
+        player.hand.some((card) => card.suit == leadingSuit)
+      ) {
+        alert(`You must play a card of suit ${leadingSuit}.`);
+        console.log(`You must play a card of suit ${leadingSuit}.`);
+        cardSelectionControl.unselectCard(selectedCard);
+        return;
+      }
+
       playCard(player.id)(selectedCard);
       cardSelectionControl.unselectCard(selectedCard);
     } else {
       console.log(`It's not Player ${displayPlayerNumber(player)}'s turn`);
     }
   };
-
-  if (player.id == 0) {
-    console.log(player.inventory);
-  }
 
   return (
     <CardSelectionControlContext.Provider value={cardSelectionControl}>

@@ -19,7 +19,7 @@ export const Players = (props: PlayersProps) => {
           setHand: props.setHand(player)
         };
         return (
-          <HandControlContext.Provider value={handControl}>
+          <HandControlContext.Provider value={handControl} key={i}>
             <Player
               key={i}
               // key={player.id}

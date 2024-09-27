@@ -528,3 +528,18 @@ export const saveState = (fullGameState: FullGameState) => {
   console.log("saved", GameState);
   alert("saved game to browser localStorage");
 };
+
+export const getEditionDescription = (edition: CardEdition) => {
+  if (edition.type == "extra_chips") {
+    return "Gives extra chips to the winner of the round in which this card was played.";
+  } else if (edition.type == "healing") {
+    return "Gives healing to the winner of the round in which this card was played.";
+  } else if (edition.type == "swap_low_and_high") {
+    return "For the round in which this card is played, low cards win instead of high cards.";
+  } else if (edition.type == "extra_damage") {
+    return "For the round in which this card is played, if the winner would take damage, they will take extra damage.";
+  } else if (edition.type == "switch_cards") {
+    return "For the round in which this card is played, each player takes the played card of the player to their right instead.";
+  }
+  return "No effect.";
+};
