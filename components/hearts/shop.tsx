@@ -181,25 +181,21 @@ const attachRarityToEdition = (
         case "common":
           return {
             type: "extra_damage",
-            damageScalar: 1.5,
             rarity: rarity
           };
         case "uncommon":
           return {
             type: "extra_damage",
-            damageScalar: 2,
             rarity: rarity
           };
         case "rare":
           return {
             type: "extra_damage",
-            damageScalar: 3,
             rarity: rarity
           };
         case "legendary":
           return {
             type: "extra_damage",
-            damageScalar: 1.5,
             rarity: rarity
           };
       }
@@ -208,25 +204,21 @@ const attachRarityToEdition = (
         case "common":
           return {
             type: "extra_chips",
-            chipsScalar: 5,
             rarity: rarity
           };
         case "uncommon":
           return {
             type: "extra_chips",
-            chipsScalar: 10,
             rarity: rarity
           };
         case "rare":
           return {
             type: "extra_chips",
-            chipsScalar: 20,
             rarity: rarity
           };
         case "legendary":
           return {
             type: "extra_chips",
-            chipsScalar: 30,
             rarity: rarity
           };
       }
@@ -235,25 +227,21 @@ const attachRarityToEdition = (
         case "common":
           return {
             type: "switch_cards",
-            direction: "clockwise",
             rarity: "common"
           };
         case "uncommon":
           return {
             type: "switch_cards",
-            direction: "clockwise",
             rarity: "common"
           };
         case "rare":
           return {
             type: "switch_cards",
-            direction: "clockwise",
             rarity: "common"
           };
         case "legendary":
           return {
             type: "switch_cards",
-            direction: "clockwise",
             rarity: "common"
           };
       }
