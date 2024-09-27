@@ -1,4 +1,3 @@
-import { CardType } from "@/utils/hearts/types";
 import styles from "./../../styles/hearts.module.css";
 import { HandSortPanel } from "./handSortPanel";
 import { DisplayHand } from "./displayHand";
@@ -9,7 +8,7 @@ export const Hand = (props: HandProps) => {
   //const [hand, setHand] = useState(props.hand);
 
   return (
-    <div className={styles.hand}>
+    <div className={styles.handContainer}>
       <DisplayHand />
       <HandSortPanel />
     </div>

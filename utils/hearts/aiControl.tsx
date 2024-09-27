@@ -6,8 +6,8 @@ import {
 } from "./cardHelpers";
 import { CardType, PlayerType, RoundInfo } from "./types";
 
-export const AI_MOVE_DELAY = 1500;
-export const RESOLVE_WINNER_DELAY = 3000;
+export const AI_MOVE_DELAY = 500;
+export const RESOLVE_WINNER_DELAY = 300;
 
 export const aiPlay: (
   aiPlayer: PlayerType,

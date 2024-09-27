@@ -1,11 +1,9 @@
 import React, { createContext, useContext, useState } from "react";
-import Card from "./card";
 import { CardType, PlayerType } from "@/utils/hearts/types";
-import { Accordion, Button } from "react-bootstrap";
 import styles from "./../../styles/hearts.module.css";
 import { Hand } from "./hand";
 import { usePlayCardContext } from "./gameboard";
-import { displayPlayerNumber } from "@/utils/hearts/cardHelpers";
+import { MAX_HEALTH, displayPlayerNumber } from "@/utils/hearts/cardHelpers";
 
 type PlayerProps = {
   player: PlayerType;
@@ -46,6 +44,10 @@ const Player = (props: PlayerProps) => {
     }
   };
 
+  if (player.id == 0) {
+    console.log(player.inventory);
+  }
+
   return (
     <CardSelectionControlContext.Provider value={cardSelectionControl}>
       <div
@@ -54,7 +56,15 @@ const Player = (props: PlayerProps) => {
           (props.isCurrentTurn ? ` ${styles.playerCurrentTurn}` : "")
         }
       >
-        <h2>Player {displayPlayerNumber(player)}</h2>
+        <div className={styles.playerHeader}>
+          <h2>Player {displayPlayerNumber(player)}</h2>
+          <div className={styles.playerHeaderPlayerInfo}>
+            <h6>
+              Health: {player.health}/{MAX_HEALTH}
+            </h6>
+            <h6>Coins: {player.coins}</h6>
+          </div>
+        </div>
         {player.hand.length > 0 && player.typeOfPlayer == "User" ? (
           <Hand />
         ) : (

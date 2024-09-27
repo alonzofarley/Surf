@@ -1,4 +1,3 @@
-import { CardType } from "@/utils/hearts/types";
 import { sortHand } from "@/utils/hearts/cardHelpers";
 import styles from "./../../styles/hearts.module.css";
 import { useHandControlContext } from "./players";

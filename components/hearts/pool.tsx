@@ -1,15 +1,9 @@
-import React, { useState } from "react";
-import Card, { displayCard } from "./card";
-import {
-  CardType,
-  PlayerType,
-  PoolType,
-  RoundInfo
-} from "@/utils/hearts/types";
-import { Accordion, Button } from "react-bootstrap";
+import React from "react";
+import { displayCard } from "./card";
+import { RoundInfo } from "@/utils/hearts/types";
 import styles from "./../../styles/hearts.module.css";
-import { Hand } from "./hand";
 import { displayPlayerNumberFromId } from "@/utils/hearts/cardHelpers";
+import { useCurrentHighlightedCardContext } from "./gameboard";
 
 type PoolViewProps = {
   roundInfo: RoundInfo;
@@ -17,6 +11,20 @@ type PoolViewProps = {
 
 export const PoolView = (props: PoolViewProps) => {
   const pool = props.roundInfo.pool;
+  if (!(0 in pool)) {
+    pool[0] = undefined;
+  }
+  if (!(1 in pool)) {
+    pool[1] = undefined;
+  }
+  if (!(2 in pool)) {
+    pool[2] = undefined;
+  }
+
+  if (!(3 in pool)) {
+    pool[3] = undefined;
+  }
+
   const winner = props.roundInfo.winner;
   const leadingPlayerId = props.roundInfo.leading.player;
 
@@ -38,19 +46,41 @@ export const PoolView = (props: PoolViewProps) => {
               );
             }
 
+            const highlightedCardState = useCurrentHighlightedCardContext();
+
+            let onMouseEnter = () => {
+              highlightedCardState.setHighlightedCard(playedCard);
+            };
+
+            let onMouseLeave = () => {
+              highlightedCardState.setHighlightedCard(undefined);
+            };
             if (leadingPlayerId == playerId) {
               return (
                 <li key={i}>
                   {winner == playerId ? <>* Winner * </> : <></>}
                   Player {displayedPlayerId} led with
-                  {displayCard(playedCard)}
+                  {displayCard(
+                    playedCard,
+                    undefined,
+                    undefined,
+                    onMouseEnter,
+                    onMouseLeave
+                  )}
                 </li>
               );
             } else {
               return (
                 <li key={i}>
                   {winner == playerId ? <>* Winner * </> : <></>}
-                  Player {displayedPlayerId} {displayCard(playedCard)}
+                  Player {displayedPlayerId}{" "}
+                  {displayCard(
+                    playedCard,
+                    undefined,
+                    undefined,
+                    onMouseEnter,
+                    onMouseLeave
+                  )}
                 </li>
               );
             }

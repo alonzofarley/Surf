@@ -1,8 +1,16 @@
 import { CardText } from "react-bootstrap";
 import {
+  AttachedId,
+  CardEdition,
   CardType,
+  EditionRarityType,
+  EditionTypeType,
+  FullGameState,
+  HandHistory,
   Log,
+  NoEdition,
   PlayerControl,
+  PlayerInventory,
   PlayerType,
   PoolType,
   RoundHistory,
@@ -13,6 +21,9 @@ import {
 export const ACE_IS_HIGH = true;
 export const ACE_IS_NOT_HIGH = false;
 export const NUM_OF_PLAYERS = 4;
+export const MAX_HEALTH = 52;
+export const STARTING_COINS = 100;
+export const LOCAL_STORAGE_GAME_KEY_STRING = "heartsGameState";
 
 export const cardValueToNum = (cardValue: string, aceIsHigh: boolean) => {
   let numberVal = Number(cardValue);
@@ -137,13 +148,12 @@ export const createDeck = () => {
   let deck: CardType[] = [];
   for (let suit of suits) {
     for (let value of values) {
-      deck.push({ suit, value });
+      deck.push({ suit, value, edition: getNoEdition() });
     }
   }
   return deck;
 };
 
-// Function to shuffle the deck
 export const shuffleDeck = (deck: CardType[]) => {
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -152,12 +162,20 @@ export const shuffleDeck = (deck: CardType[]) => {
   return deck;
 };
 
-// Function to create players
 export const createPlayers = (numPlayers: number) => {
   let players: PlayerType[] = [];
   for (let i = 0; i < numPlayers; i++) {
     let typeOfPlayer: PlayerControl = i == 0 ? "User" : "AI";
-    players.push({ id: i, hand: [], typeOfPlayer: typeOfPlayer });
+    players.push({
+      id: i,
+      hand: [],
+      typeOfPlayer: typeOfPlayer,
+      health: MAX_HEALTH,
+      coins: STARTING_COINS,
+      inventory: {
+        editions: []
+      }
+    });
   }
   return players;
 };
@@ -244,6 +262,39 @@ export const removeCardFromPlayer = (
   };
 };
 
+export const determineDamage = (roundInfo: RoundInfo) => {
+  let totalDamage = 0;
+  let cards = getPoolPids(roundInfo.pool).map((pid) => {
+    return roundInfo.pool[pid];
+  });
+  if (cards.some((card) => card == undefined))
+    throw Error("determineDamage() requires no card in round be undefined");
+  cards.forEach((card) => {
+    if (card?.suit == "hearts") totalDamage += 1;
+    if (card?.suit == "spades" && card.value == "Q") {
+      totalDamage += 13;
+    }
+  });
+  return totalDamage;
+};
+
+export const determineCoins = (roundInfo: RoundInfo) => {
+  let totalCoins = 0;
+  let cards = getPoolPids(roundInfo.pool).map((pid) => {
+    return roundInfo.pool[pid];
+  });
+  if (cards.some((card) => card == undefined))
+    throw Error("determineDamage() requires no card in round be undefined");
+  cards.forEach((card) => {
+    if (
+      card?.suit != "hearts" &&
+      !(card?.suit == "spades" && card.value == "Q")
+    )
+      totalCoins += 1;
+  });
+  return totalCoins;
+};
+
 export const adjudicateFinishedRound = (
   previousRoundInfo: RoundInfo,
   previousPlayers: PlayerType[],
@@ -272,15 +323,6 @@ export const adjudicateFinishedRound = (
   let updatedLog: Log = {
     history: [...previousLog.history.slice(0, -1), currentRoundHistory]
   };
-  // [
-  //   ...previousLog,
-  //   {
-  //     roundInfo: {
-  //       ...previousRoundInfo,
-  //       winner: previousRoundInfo.winner
-  //     }
-  //   }
-  // ];
 
   let updatedCurrentTurn = previousRoundInfo.winner;
 
@@ -288,8 +330,23 @@ export const adjudicateFinishedRound = (
     NUM_OF_PLAYERS,
     previousRoundInfo.roundNumber + 1
   );
+
+  let updatedPlayers = previousPlayers.map((player) => {
+    if (player.id == previousRoundInfo.winner) {
+      let damage: number = determineDamage(previousRoundInfo);
+      let coins: number = determineCoins(previousRoundInfo);
+      return {
+        ...player,
+        health: player.health - damage,
+        coins: player.coins + coins
+      };
+    } else {
+      return player;
+    }
+  });
+
   return {
-    updatedPlayers: previousPlayers,
+    updatedPlayers: updatedPlayers,
     updatedRoundInfo: updatedRoundInfo,
     updatedCurrentTurn: updatedCurrentTurn,
     updatedLog: updatedLog
@@ -359,4 +416,115 @@ export const playCardHelper =
 
 export const reverseList = (list: any[]): any[] => {
   return list.slice().reverse();
+};
+
+type CurrentWonCards = {
+  [playerId: PlayerType["id"]]: CardType[];
+};
+
+type CurrentWonCardsByRound = {
+  [playerId: PlayerType["id"]]: {
+    roundNumber: number;
+    cards: CardType[];
+  }[];
+};
+
+export const getWonCardByEachPlayer: (
+  HandHistory: HandHistory
+) => CurrentWonCards = (handHistory: HandHistory) => {
+  let currentWonCards: CurrentWonCards = {};
+  handHistory.roundHistories.forEach((rh) => {
+    let roundInfo = rh.roundInfo;
+    if (roundInfo.winner != undefined) {
+      let cards: CardType[] = getPoolPids(roundInfo.pool)
+        .map((key: PlayerType["id"]) => {
+          return roundInfo.pool[key];
+        })
+        .filter((value) => value != undefined) as CardType[];
+      if (!currentWonCards[roundInfo.winner]) {
+        currentWonCards[roundInfo.winner] = cards;
+      } else {
+        currentWonCards[roundInfo.winner] = [
+          ...currentWonCards[roundInfo.winner],
+          ...cards
+        ];
+        cards;
+      }
+    }
+  });
+  return currentWonCards;
+};
+
+export const getWonCardByEachPlayerByRound: (
+  HandHistory: HandHistory
+) => CurrentWonCardsByRound = (handHistory: HandHistory) => {
+  let currentWonCardsByRound: CurrentWonCardsByRound = {};
+  handHistory.roundHistories.forEach((rh) => {
+    let roundInfo = rh.roundInfo;
+    if (roundInfo.winner != undefined) {
+      let cards: CardType[] = getPoolPids(roundInfo.pool)
+        .map((key: PlayerType["id"]) => {
+          return roundInfo.pool[key];
+        })
+        .filter((value) => value != undefined) as CardType[];
+      if (!currentWonCardsByRound[roundInfo.winner]) {
+        currentWonCardsByRound[roundInfo.winner] = [
+          {
+            roundNumber: roundInfo.roundNumber,
+            cards: cards
+          }
+        ];
+      } else {
+        currentWonCardsByRound[roundInfo.winner] = [
+          ...currentWonCardsByRound[roundInfo.winner],
+          {
+            roundNumber: roundInfo.roundNumber,
+            cards: cards
+          }
+        ];
+      }
+    }
+  });
+  return currentWonCardsByRound;
+};
+
+export function extractDataFromAttachedId<T>(attachedId: AttachedId<T>): T {
+  let { id, ...data } = attachedId;
+  return data as T;
+}
+
+export function attachIdToData<T>(data: T, id: number): AttachedId<T> {
+  return { id, ...data };
+}
+
+export const getNoEdition = () => {
+  return { type: "none", rarity: "common" } as NoEdition;
+};
+
+export let editionKeyString = (ed: any) => {
+  return `${ed.type} ${ed.rarity}`;
+};
+
+export let getEditionFromKeyString = (keyString: string) => {
+  if (keyString == "none") return getNoEdition();
+  let elements = keyString.split(" ");
+  let type: EditionTypeType = elements[0] as EditionTypeType;
+  let rarity: EditionRarityType = elements[1] as EditionRarityType;
+
+  return {
+    type,
+    rarity
+  } as CardEdition;
+};
+
+export const safeJSONParse = (json: string) => {
+  return json == undefined ? undefined : JSON.parse(json);
+};
+
+export const saveState = (fullGameState: FullGameState) => {
+  let GameState = JSON.stringify(fullGameState);
+
+  localStorage.setItem(LOCAL_STORAGE_GAME_KEY_STRING, GameState);
+  console.log("saved", GameState);
+  alert("saved game to browser localStorage");
 };
