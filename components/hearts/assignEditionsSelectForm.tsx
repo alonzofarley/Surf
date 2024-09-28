@@ -8,12 +8,14 @@ import {
   AttachedId,
   CardEdition,
   CardType,
+  PlayerInventory,
+  PlayerType,
   PlayersState
 } from "@/utils/hearts/types";
 
 type AssignEditionsSelectFormProps = {
   playersState: PlayersState;
-  editions: (CardEdition & { number: number })[];
+  unassignedEditions: (CardEdition & { number: number })[];
   card: CardType;
   i: number;
 };
@@ -24,16 +26,20 @@ export const AssignEditionsSelectForm = (
   let card = props.card;
   return (
     <select
-      onChange={handleSelectChange(props.playersState, props.editions, {
-        ...card,
-        id: props.i
-      })}
+      onChange={handleSelectChange(
+        props.playersState,
+        props.unassignedEditions,
+        {
+          ...card,
+          id: props.i
+        }
+      )}
       value={editionKeyString(card.edition)}
     >
       <option value={"none"} key={-1}>
         None
       </option>
-      {props.editions.map((edition) => {
+      {props.unassignedEditions.map((edition) => {
         if (
           edition.number < 1 &&
           !(
@@ -96,7 +102,7 @@ const handleSelectChange =
           ...p,
           inventory: {
             ...p.inventory,
-            editions: newEditions
+            unassignedEditions: newEditions
           },
           hand: p.hand
             .map((c, j) => {
@@ -112,7 +118,7 @@ const handleSelectChange =
             .map((c) => {
               return extractDataFromAttachedId(c);
             })
-        };
+        } as PlayerType;
       });
     });
   };

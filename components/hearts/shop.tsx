@@ -31,10 +31,18 @@ export const Shop = (props: ShopProps) => {
     }
   }, [props.showShop]);
 
+  const resetChanges = () => {
+    setChanges({
+      coinsLeft: props.coins,
+      newEditions: []
+    });
+  };
+
   const endShop = () => {
     props.setShowShop(false);
     props.submitChanges(changes);
     props.onShopEnd(changes.newEditions);
+    resetChanges();
   };
 
   const buy = (item: ShopOption) => () => {

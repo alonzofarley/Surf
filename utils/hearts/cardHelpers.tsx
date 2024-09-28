@@ -174,7 +174,8 @@ export const createPlayers = (numPlayers: number) => {
       health: MAX_HEALTH,
       coins: STARTING_COINS,
       inventory: {
-        editions: []
+        unassignedEditions: [],
+        storedEditions: []
       }
     });
   }
@@ -194,14 +195,11 @@ export const distributeCardsFromDeck = (
   players: PlayerType[]
 ) => {
   let newDeck = [...deck];
-  let newPlayers = [...players];
-  console.log(newPlayers.map((p) => p.hand));
-  console.log(newDeck.length);
+  let newPlayers: PlayerType[] = JSON.parse(JSON.stringify(players));
   for (let i = 0; i < 52; i++) {
     let card: CardType = newDeck.pop() as CardType;
     newPlayers[i % 4].hand.push(card);
   }
-  console.log(newPlayers.map((p) => p.hand));
 
   return {
     remainingDeck: newDeck,
@@ -552,7 +550,7 @@ export const getEditionDescription = (edition: CardEdition) => {
 };
 
 export const getNewInventory = (changes: Changes, p: PlayerType) => {
-  let newEditionsInventory = [...p.inventory.editions];
+  let newEditionsInventory = [...p.inventory.storedEditions];
 
   changes.newEditions.forEach((newEdition) => {
     if (newEdition.type != "none") {

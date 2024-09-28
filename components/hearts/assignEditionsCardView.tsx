@@ -9,7 +9,7 @@ export const AssignEditionsCardView = (props: AssignEditionsCardViewProps) => {
   let playersState = usePlayersStateContext();
   let player = playersState.players[0];
 
-  let editions = player.inventory.editions;
+  let unassignedEditions = player.inventory.unassignedEditions;
   let cards = player.hand;
   return cards.map((card, i) => {
     return (
@@ -17,7 +17,7 @@ export const AssignEditionsCardView = (props: AssignEditionsCardViewProps) => {
         {displayCard(card)}
         <AssignEditionsSelectForm
           playersState={playersState}
-          editions={editions}
+          unassignedEditions={unassignedEditions}
           card={card}
           i={i}
         />

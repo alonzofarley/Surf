@@ -13,8 +13,8 @@ export const AssignEditionsEditionView = (
 
   let player = playersState.players[0];
 
-  let editions = player.inventory.editions;
-  return editions.map((edition) => {
+  let unassignedEditions = player.inventory.unassignedEditions;
+  return unassignedEditions.map((edition) => {
     if (edition.number < 1) return <></>;
     return (
       <div>

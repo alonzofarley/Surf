@@ -62,7 +62,8 @@ export type CardType = {
 };
 
 export type PlayerInventory = {
-  editions: EditionsInventory;
+  unassignedEditions: EditionsInventory;
+  storedEditions: EditionsInventory;
 };
 
 export type EditionsInventory = {

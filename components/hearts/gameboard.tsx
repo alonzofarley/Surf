@@ -1,4 +1,3 @@
-// src/components/GameBoard.js
 import React, { Dispatch, createContext, useContext, useState } from "react";
 import styles from "./../../styles/hearts.module.css";
 import {
@@ -69,8 +68,6 @@ export const GameBoard = () => {
   );
   const [gameInProgress, setGameInProgess] = useState(false);
 
-  console.log([...players]);
-
   const loadState = () => {
     let GameState = localStorage.getItem(LOCAL_STORAGE_GAME_KEY_STRING);
     if (GameState) {
@@ -105,12 +102,10 @@ export const GameBoard = () => {
     let _updatedPlayers = undefined;
     flushSync(() => {
       setPlayers((_players) => {
-        console.log([..._players]);
         let { remainingDeck, updatedPlayers } = distributeCardsFromDeck(
           shuffleDeck(createDeck()),
           _players
         );
-        console.log([...updatedPlayers]);
         _updatedPlayers = updatedPlayers;
         return updatedPlayers;
       });
@@ -134,9 +129,6 @@ export const GameBoard = () => {
     let newPlayers = updatedPlayers ? updatedPlayers : players;
 
     flushSync(() => {
-      //setDeck(remainingDeck);
-      //setPlayers(updatedPlayers);
-
       setHandInProgress(true);
       setHandCount(newHandCount);
       setCurrentTurn(newCurrentTurn);
@@ -283,7 +275,8 @@ export const GameBoard = () => {
             coins: changes.coinsLeft,
             inventory: {
               ...p.inventory,
-              editions: newEditionsInventory
+              unassignedEditions: [...newEditionsInventory],
+              storedEditions: [...newEditionsInventory]
             }
           };
         });
@@ -356,7 +349,7 @@ export const GameBoard = () => {
             flushSync(() => {
               setShowAssignEditions(true);
             });
-            //dealCards();
+            dealCards();
           }}
         />
         <PlayersContext.Provider
@@ -371,7 +364,7 @@ export const GameBoard = () => {
             showAssignEditions={showAssignEditions}
             onAssignEnd={async () => {
               await delay(AUTO_PROGRESS_GAME_DELAY);
-              //startNewHand();
+              startNewHand();
             }}
           />
         </PlayersContext.Provider>
