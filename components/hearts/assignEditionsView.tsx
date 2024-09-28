@@ -1,26 +1,8 @@
 import { Offcanvas } from "react-bootstrap";
 import styles from "./../../styles/hearts.module.css";
-import {
-  AttachedId,
-  CardEdition,
-  CardType,
-  Edition,
-  EditionRarityType,
-  EditionTypeType,
-  NoEdition,
-  PlayerType,
-  PlayersState
-} from "@/utils/hearts/types";
-import { displayCard } from "./card";
+import { CardEdition, PlayerType } from "@/utils/hearts/types";
 import { usePlayersStateContext } from "./gameboard";
-import {
-  attachIdToData,
-  editionKeyString,
-  extractDataFromAttachedId,
-  getEditionFromKeyString,
-  getNoEdition
-} from "@/utils/hearts/cardHelpers";
-import { AssignEditionsSelectForm } from "./assignEditionsSelectForm";
+
 import { AssignEditionsCardView } from "./assignEditionsCardView";
 import { AssignEditionsEditionView } from "./assignEditionsEditionView";
 
@@ -28,6 +10,7 @@ type AssignEditionsViewProps = {
   showAssignEditions: boolean;
   setShowAssignEditions: (b: boolean) => void;
   player: PlayerType;
+  onAssignEnd: () => void;
 };
 export const AssignEditionsView = (props: AssignEditionsViewProps) => {
   let playersState = usePlayersStateContext();
@@ -38,10 +21,10 @@ export const AssignEditionsView = (props: AssignEditionsViewProps) => {
 
   return (
     <>
-      <ToggleAssignEditionsButton
+      {/* <ToggleAssignEditionsButton
         setShowAssignEditions={props.setShowAssignEditions}
         show={true}
-      />
+      /> */}
       <Offcanvas
         show={props.showAssignEditions}
         className={`${styles.assignEditionsView} ${styles.offCanvasDiv}`}
@@ -60,6 +43,7 @@ export const AssignEditionsView = (props: AssignEditionsViewProps) => {
         <ToggleAssignEditionsButton
           setShowAssignEditions={props.setShowAssignEditions}
           show={false}
+          onAssignEnd={props.onAssignEnd}
         />
       </Offcanvas>
     </>
@@ -69,10 +53,14 @@ export const AssignEditionsView = (props: AssignEditionsViewProps) => {
 const ToggleAssignEditionsButton = (props: {
   setShowAssignEditions: (b: boolean) => void;
   show: boolean;
+  onAssignEnd: () => void;
 }) => {
   return (
     <button
-      onClick={() => props.setShowAssignEditions(props.show)}
+      onClick={() => {
+        props.setShowAssignEditions(props.show);
+        props.onAssignEnd();
+      }}
       className={styles.setShowAssignEditionsButton}
     >
       {props.show ? "Assign Editions" : "Close"}

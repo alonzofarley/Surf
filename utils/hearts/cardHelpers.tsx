@@ -3,6 +3,7 @@ import {
   AttachedId,
   CardEdition,
   CardType,
+  Changes,
   EditionRarityType,
   EditionTypeType,
   FullGameState,
@@ -194,9 +195,14 @@ export const distributeCardsFromDeck = (
 ) => {
   let newDeck = [...deck];
   let newPlayers = [...players];
+  console.log(newPlayers.map((p) => p.hand));
+  console.log(newDeck.length);
   for (let i = 0; i < 52; i++) {
-    newPlayers[i % 4].hand.push(newDeck.pop() as CardType);
+    let card: CardType = newDeck.pop() as CardType;
+    newPlayers[i % 4].hand.push(card);
   }
+  console.log(newPlayers.map((p) => p.hand));
+
   return {
     remainingDeck: newDeck,
     updatedPlayers: newPlayers
@@ -307,8 +313,6 @@ export const adjudicateFinishedRound = (
 
   //TODO: should probably change how this is done later.
   let currentRoundHistory = previousLog.history.slice(-1)[0];
-  console.log(currentRoundHistory);
-  console.log(previousLog);
 
   currentRoundHistory = {
     ...currentRoundHistory,
@@ -545,4 +549,26 @@ export const getEditionDescription = (edition: CardEdition) => {
     return "For the round in which this card is played, each player takes the played card of the player to their right instead.";
   }
   return "No effect.";
+};
+
+export const getNewInventory = (changes: Changes, p: PlayerType) => {
+  let newEditionsInventory = [...p.inventory.editions];
+
+  changes.newEditions.forEach((newEdition) => {
+    if (newEdition.type != "none") {
+      let existingEdition = newEditionsInventory.find((e) => {
+        return e.type == newEdition.type && e.rarity == newEdition.rarity;
+      });
+      if (existingEdition != undefined) {
+        existingEdition.number = existingEdition.number + 1;
+      } else {
+        newEditionsInventory.push({
+          type: newEdition.type,
+          rarity: newEdition.rarity,
+          number: 1
+        });
+      }
+    }
+  });
+  return newEditionsInventory;
 };

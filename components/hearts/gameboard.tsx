@@ -20,6 +20,7 @@ import {
   createNewRoundInfo,
   createPlayers,
   distributeCardsFromDeck,
+  getNewInventory,
   getNoEdition,
   playCardHelper,
   safeJSONParse,
@@ -30,6 +31,7 @@ import { LogView } from "./log";
 import { Players } from "./players";
 import {
   AI_MOVE_DELAY,
+  AUTO_PROGRESS_GAME_DELAY,
   RESOLVE_WINNER_DELAY,
   aiPlay,
   delay
@@ -46,7 +48,7 @@ export type PlayCardCallback = (
 
 export const GameBoard = () => {
   const [deck, setDeck] = useState([] as CardType[]);
-  const [players, setPlayers]: [
+  let [players, setPlayers]: [
     PlayerType[],
     Dispatch<React.SetStateAction<PlayerType[]>>
   ] = useState(createPlayers(NUM_OF_PLAYERS));
@@ -65,6 +67,9 @@ export const GameBoard = () => {
   const [highlightedCard, setHighlightedCard] = useState(
     undefined as CardType | undefined
   );
+  const [gameInProgress, setGameInProgess] = useState(false);
+
+  console.log([...players]);
 
   const loadState = () => {
     let GameState = localStorage.getItem(LOCAL_STORAGE_GAME_KEY_STRING);
@@ -90,11 +95,30 @@ export const GameBoard = () => {
     }
   };
 
-  let deal = () => {
-    let { remainingDeck, updatedPlayers } = distributeCardsFromDeck(
-      shuffleDeck(createDeck()),
-      players
-    );
+  let startGame = () => {
+    setGameInProgess(true);
+    let updatedPlayers = dealCards();
+    startNewHand(updatedPlayers);
+  };
+
+  let dealCards = () => {
+    let _updatedPlayers = undefined;
+    flushSync(() => {
+      setPlayers((_players) => {
+        console.log([..._players]);
+        let { remainingDeck, updatedPlayers } = distributeCardsFromDeck(
+          shuffleDeck(createDeck()),
+          _players
+        );
+        console.log([...updatedPlayers]);
+        _updatedPlayers = updatedPlayers;
+        return updatedPlayers;
+      });
+    });
+    return _updatedPlayers;
+  };
+
+  let startNewHand = (updatedPlayers?: PlayerType[]) => {
     let newHandCount = handCount + 1;
     let newLog = {
       history: [
@@ -107,9 +131,12 @@ export const GameBoard = () => {
     };
     let newRoundInfo: RoundInfo = { ...roundInfo, roundNumber: 0 };
     let newCurrentTurn = handFirstTurn;
+    let newPlayers = updatedPlayers ? updatedPlayers : players;
+
     flushSync(() => {
-      setDeck(remainingDeck);
-      setPlayers(updatedPlayers);
+      //setDeck(remainingDeck);
+      //setPlayers(updatedPlayers);
+
       setHandInProgress(true);
       setHandCount(newHandCount);
       setCurrentTurn(newCurrentTurn);
@@ -119,7 +146,7 @@ export const GameBoard = () => {
     stepPlayCard(
       0,
       createDummyCardToNeverBeUsed,
-      updatedPlayers,
+      newPlayers,
       newRoundInfo,
       newCurrentTurn,
       newLog,
@@ -212,22 +239,19 @@ export const GameBoard = () => {
 
       flushSync(() => {
         setCurrentTurn(updatedCurrentTurn);
-      });
-      flushSync(() => {
         setPlayers(updatedPlayers);
-      });
-      flushSync(() => {
         setRoundInfo(updatedRoundInfo);
-      });
-      flushSync(() => {
         setLog(updatedLog);
       });
     }
     if (handOver) {
+      await delay(AUTO_PROGRESS_GAME_DELAY);
+
       //End Game, wait for next hand
       flushSync(() => {
         setHandInProgress(false);
         setHandFirstTurn((hft) => (hft + 1) % 4);
+        setShowShop(true);
       });
     }
   };
@@ -238,48 +262,31 @@ export const GameBoard = () => {
 
   const setHand: (p: PlayerType) => (h: CardType[]) => void =
     (p: PlayerType) => (h: CardType[]) => {
-      setPlayers(
-        [...players].map((player) => {
+      setPlayers((_players) => {
+        return [...players].map((player) => {
           if (player.id != p.id) {
             return player;
           }
           return { ...player, hand: [...h] };
-        })
-      );
+        });
+      });
     };
 
   const submitShopChanges = (changes: Changes) => {
-    setPlayers((_players) => {
-      return _players.map((p, i) => {
-        if (i != 0) return p;
-
-        let newEditionsInventory = [...p.inventory.editions];
-
-        changes.newEditions.forEach((newEdition) => {
-          if (newEdition.type != "none") {
-            let existingEdition = newEditionsInventory.find((e) => {
-              return e.type == newEdition.type && e.rarity == newEdition.rarity;
-            });
-            if (existingEdition != undefined) {
-              existingEdition.number = existingEdition.number + 1;
-            } else {
-              newEditionsInventory.push({
-                type: newEdition.type,
-                rarity: newEdition.rarity,
-                number: 1
-              });
+    flushSync(() => {
+      setPlayers((_players) => {
+        return _players.map((p, i) => {
+          if (i != 0) return p;
+          let newEditionsInventory = getNewInventory(changes, p);
+          return {
+            ...p,
+            coins: changes.coinsLeft,
+            inventory: {
+              ...p.inventory,
+              editions: newEditionsInventory
             }
-          }
+          };
         });
-
-        return {
-          ...p,
-          coins: changes.coinsLeft,
-          inventory: {
-            ...p.inventory,
-            editions: newEditionsInventory
-          }
-        };
       });
     });
   };
@@ -295,11 +302,7 @@ export const GameBoard = () => {
         >
           <div className={`${styles.playersPanel} ${styles.leftPanel}`}>
             <h1>Hearts Game</h1>
-            {!handInProgress ? (
-              <button onClick={deal}>Next Hand</button>
-            ) : (
-              <></>
-            )}
+            <button onClick={startGame}>Start Game</button>
             <CurrentHighlightedCardContext.Provider
               value={{ highlightedCard, setHighlightedCard }}
             >
@@ -312,15 +315,23 @@ export const GameBoard = () => {
           </div>
         </PlayCardStateContext.Provider>
         <div className={styles.rightPanel}>
-          <h3>Hand {handCount}</h3>
-          <h3>Round {roundInfo.roundNumber + 1}</h3>
-          <div className={styles.rightPanelPoolAndLog}>
-            <CurrentHighlightedCardContext.Provider
-              value={{ highlightedCard, setHighlightedCard }}
-            >
-              <PoolView roundInfo={roundInfo} />
-            </CurrentHighlightedCardContext.Provider>
-          </div>
+          {!handInProgress ? (
+            <></>
+          ) : (
+            <>
+              <h3>
+                Hand {handCount} - Round {roundInfo.roundNumber + 1}
+              </h3>
+
+              <div className={styles.rightPanelPoolAndLog}>
+                <CurrentHighlightedCardContext.Provider
+                  value={{ highlightedCard, setHighlightedCard }}
+                >
+                  <PoolView roundInfo={roundInfo} />
+                </CurrentHighlightedCardContext.Provider>
+              </div>
+            </>
+          )}
         </div>
         <CurrentHighlightedCardContext.Provider
           value={{ highlightedCard, setHighlightedCard }}
@@ -340,6 +351,13 @@ export const GameBoard = () => {
           setShowShop={setShowShop}
           coins={players[0].coins}
           submitChanges={submitShopChanges}
+          onShopEnd={async () => {
+            await delay(AUTO_PROGRESS_GAME_DELAY);
+            flushSync(() => {
+              setShowAssignEditions(true);
+            });
+            //dealCards();
+          }}
         />
         <PlayersContext.Provider
           value={{
@@ -351,6 +369,10 @@ export const GameBoard = () => {
             player={players[0]}
             setShowAssignEditions={setShowAssignEditions}
             showAssignEditions={showAssignEditions}
+            onAssignEnd={async () => {
+              await delay(AUTO_PROGRESS_GAME_DELAY);
+              //startNewHand();
+            }}
           />
         </PlayersContext.Provider>
         <button

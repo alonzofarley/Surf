@@ -14,6 +14,7 @@ type ShopProps = {
   setShowShop: (b: boolean) => void;
   coins: number;
   submitChanges: (c: Changes) => void;
+  onShopEnd: (newEditions: CardEdition[]) => void;
 };
 
 export const Shop = (props: ShopProps) => {
@@ -33,6 +34,7 @@ export const Shop = (props: ShopProps) => {
   const endShop = () => {
     props.setShowShop(false);
     props.submitChanges(changes);
+    props.onShopEnd(changes.newEditions);
   };
 
   const buy = (item: ShopOption) => () => {
@@ -56,12 +58,12 @@ export const Shop = (props: ShopProps) => {
   if (!shopOptions) {
     return (
       <>
-        <button
+        {/* <button
           onClick={() => props.setShowShop(true)}
           className={styles.hideShopButton}
         >
           Show Shop
-        </button>
+        </button> */}
       </>
     );
   }
@@ -75,12 +77,12 @@ export const Shop = (props: ShopProps) => {
 
   return (
     <>
-      <button
+      {/* <button
         onClick={() => props.setShowShop(true)}
         className={styles.hideShopButton}
       >
         Show Shop
-      </button>
+      </button> */}
 
       <Offcanvas
         show={props.showShop}
