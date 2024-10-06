@@ -4,23 +4,28 @@ import {
   CardType,
   Changes,
   Log,
+  PlayCardUpdates,
   PlayerInventory,
   PlayerType,
   PlayersState,
   RoundInfo,
-  Suit
+  Suit,
+  UpdateAccumulator,
+  UpdateAction
 } from "@/utils/hearts/types";
 import { PoolView } from "./pool";
 import {
   LOCAL_STORAGE_GAME_KEY_STRING,
   NUM_OF_PLAYERS,
   adjudicateFinishedRound,
+  adjudicateUpdateAction,
   createDeck,
   createNewRoundInfo,
   createPlayers,
   distributeCardsFromDeck,
   getNewInventory,
   getNoEdition,
+  getUpdateActions,
   playCardHelper,
   safeJSONParse,
   saveState,
@@ -67,6 +72,17 @@ export const GameBoard = () => {
     undefined as CardType | undefined
   );
   const [gameInProgress, setGameInProgess] = useState(false);
+  const [updateAccum, setUpdateAccum] = useState({
+    totalDamageBase: 0,
+    totalDamageScalar: 1,
+    totalCoinsBase: 0,
+    totalCoinsScalar: 1
+  } as UpdateAccumulator);
+  const [updateAccumDoneCalculating, setUpdateAccumDoneCalculating] =
+    useState(false);
+  const [currentScoringAction, setCurrentScoringAction] = useState(
+    undefined as UpdateAction | undefined
+  );
 
   const loadState = () => {
     let GameState = localStorage.getItem(LOCAL_STORAGE_GAME_KEY_STRING);
@@ -113,6 +129,16 @@ export const GameBoard = () => {
     return _updatedPlayers;
   };
 
+  let resetUpdateAccum = () => {
+    setUpdateAccum({
+      totalDamageBase: 0,
+      totalDamageScalar: 1,
+      totalCoinsBase: 0,
+      totalCoinsScalar: 1
+    });
+    setUpdateAccumDoneCalculating(false);
+  };
+
   let startNewHand = (updatedPlayers?: PlayerType[]) => {
     let newHandCount = handCount + 1;
     let newLog = {
@@ -135,107 +161,99 @@ export const GameBoard = () => {
       setRoundInfo(newRoundInfo);
       setLog(newLog);
     });
-    stepPlayCard(
-      0,
-      createDummyCardToNeverBeUsed,
-      newPlayers,
-      newRoundInfo,
-      newCurrentTurn,
-      newLog,
-      true
-    );
+    let previousUpdates: PlayCardUpdates = {
+      players: newPlayers,
+      roundInfo: newRoundInfo,
+      currentTurn: newCurrentTurn,
+      log: newLog
+    };
+    stepPlayCard(0, dummyCardToNeverBeUsed, previousUpdates, true);
   };
 
-  let createDummyCardToNeverBeUsed: CardType = {
+  let dummyCardToNeverBeUsed: CardType = {
     suit: "diamonds",
     value: "A",
     edition: getNoEdition()
   };
 
+  const submitPlayCardUpdates = async (updates: PlayCardUpdates) => {
+    flushSync(() => {
+      setCurrentTurn(updates.currentTurn);
+      setPlayers(updates.players);
+      setRoundInfo(updates.roundInfo);
+      setLog(updates.log);
+    });
+  };
+
   const stepPlayCard = async (
     pid: PlayerType["id"],
     card: CardType,
-    previousPlayers: PlayerType[],
-    previousRoundInfo: RoundInfo,
-    previousTurn: number,
-    previousLog: Log,
+    previousUpdates: PlayCardUpdates,
     advanceAIPlayersOnly: boolean = false
   ) => {
-    let updatedPlayers = previousPlayers;
-    let updatedRoundInfo = previousRoundInfo;
-    let updatedCurrentTurn = previousTurn;
-    let updatedLog = previousLog;
+    let currentUpdates: PlayCardUpdates = previousUpdates;
 
     if (!advanceAIPlayersOnly) {
-      let updates = await playCardHelper(pid, card)(
-        updatedRoundInfo,
-        updatedPlayers,
-        updatedCurrentTurn,
-        updatedLog
-      );
-      updatedPlayers = updates.updatedPlayers;
-      updatedRoundInfo = updates.updatedRoundInfo;
-      updatedCurrentTurn = updates.updatedCurrentTurn;
-      updatedLog = updates.updatedLog;
-
-      flushSync(() => {
-        setCurrentTurn(updatedCurrentTurn);
-        setPlayers(updatedPlayers);
-        setRoundInfo(updatedRoundInfo);
-        setLog(updatedLog);
-      });
+      let updates = await playCardHelper(pid, card)(currentUpdates);
+      submitPlayCardUpdates(updates);
+      currentUpdates = updates;
     }
 
     let handOver = false;
-
     while (
-      (updatedCurrentTurn != 0 || updatedRoundInfo.winner != undefined) &&
+      (currentUpdates.currentTurn != 0 ||
+        currentUpdates.roundInfo.winner != undefined) &&
       !handOver
     ) {
-      if (updatedRoundInfo.winner != undefined) {
-        await delay(RESOLVE_WINNER_DELAY);
-        let updates = adjudicateFinishedRound(
-          updatedRoundInfo,
-          updatedPlayers,
-          updatedLog
-        );
+      if (currentUpdates.roundInfo.winner != undefined) {
+        await delay(RESOLVE_WINNER_DELAY * 2);
+        let updateActions = getUpdateActions(currentUpdates);
+        let i = 0;
+        let _updateAccum = updateAccum;
+        while (i < updateActions.length) {
+          await delay(RESOLVE_WINNER_DELAY * 2);
+          let nextAction = updateActions[i];
+          flushSync(() => {
+            console.log("currently Scoring ", nextAction.sourceCard);
+            setCurrentScoringAction(nextAction);
+          });
+          await delay(RESOLVE_WINNER_DELAY * 2);
 
-        updatedPlayers = updates.updatedPlayers;
-        updatedRoundInfo = updates.updatedRoundInfo;
-        updatedCurrentTurn = updates.updatedCurrentTurn;
-        updatedLog = updates.updatedLog;
+          _updateAccum = adjudicateUpdateAction(_updateAccum, nextAction);
+          flushSync(() => {
+            setUpdateAccum(_updateAccum);
+          });
+          i = i + 1;
+        }
         flushSync(() => {
-          setCurrentTurn(updatedCurrentTurn);
-          setPlayers(updatedPlayers);
-          setRoundInfo(updatedRoundInfo);
-          setLog(updatedLog);
+          setUpdateAccumDoneCalculating(true);
+          setCurrentScoringAction(undefined);
         });
 
-        handOver = updatedPlayers.every((p) => p.hand.length == 0);
+        await delay(RESOLVE_WINNER_DELAY * 5);
+
+        console.log("updateAccum", _updateAccum);
+        let updates = adjudicateFinishedRound(currentUpdates, _updateAccum);
+        submitPlayCardUpdates(updates);
+        currentUpdates = updates;
+        await delay(RESOLVE_WINNER_DELAY * 2);
+
+        handOver = currentUpdates.players.every((p) => p.hand.length == 0);
+        resetUpdateAccum();
         continue;
       }
 
       await delay(AI_MOVE_DELAY);
-      let aiPlayer = updatedPlayers[updatedCurrentTurn];
-      let playedCard = aiPlay(aiPlayer, updatedRoundInfo);
-      let updates = await playCardHelper(aiPlayer.id, playedCard)(
-        updatedRoundInfo,
-        updatedPlayers,
-        updatedCurrentTurn,
-        updatedLog
-      );
-      updatedPlayers = updates.updatedPlayers;
-      updatedRoundInfo = updates.updatedRoundInfo;
-      updatedCurrentTurn = updates.updatedCurrentTurn;
-      updatedLog = updates.updatedLog;
-
-      flushSync(() => {
-        setCurrentTurn(updatedCurrentTurn);
-        setPlayers(updatedPlayers);
-        setRoundInfo(updatedRoundInfo);
-        setLog(updatedLog);
-      });
+      let aiPlayer = currentUpdates.players[currentUpdates.currentTurn];
+      let playedCard = aiPlay(aiPlayer, currentUpdates.roundInfo);
+      let updates = await playCardHelper(
+        aiPlayer.id,
+        playedCard
+      )(currentUpdates);
+      submitPlayCardUpdates(updates);
+      currentUpdates = updates;
     }
+
     if (handOver) {
       await delay(AUTO_PROGRESS_GAME_DELAY);
 
@@ -249,7 +267,13 @@ export const GameBoard = () => {
   };
 
   const playCard: PlayCardCallback = (pid) => async (card) => {
-    await stepPlayCard(pid, card, players, roundInfo, currentTurn, log);
+    let previousUpdates: PlayCardUpdates = {
+      players: players,
+      roundInfo: roundInfo,
+      currentTurn: currentTurn,
+      log: log
+    };
+    await stepPlayCard(pid, card, previousUpdates);
   };
 
   const setHand: (p: PlayerType) => (h: CardType[]) => void =
@@ -294,8 +318,12 @@ export const GameBoard = () => {
           }}
         >
           <div className={`${styles.playersPanel} ${styles.leftPanel}`}>
-            <h1>Hearts Game</h1>
-            <button onClick={startGame}>Start Game</button>
+            <h1>Heartz </h1>
+            {!gameInProgress ? (
+              <button onClick={startGame}>Start Game</button>
+            ) : (
+              <></>
+            )}
             <CurrentHighlightedCardContext.Provider
               value={{ highlightedCard, setHighlightedCard }}
             >
@@ -315,14 +343,53 @@ export const GameBoard = () => {
               <h3>
                 Hand {handCount} - Round {roundInfo.roundNumber + 1}
               </h3>
-
               <div className={styles.rightPanelPoolAndLog}>
-                <CurrentHighlightedCardContext.Provider
-                  value={{ highlightedCard, setHighlightedCard }}
+                <CurrentScoringActionContext.Provider
+                  value={{ currentScoringAction, setCurrentScoringAction }}
                 >
-                  <PoolView roundInfo={roundInfo} />
-                </CurrentHighlightedCardContext.Provider>
+                  <CurrentHighlightedCardContext.Provider
+                    value={{ highlightedCard, setHighlightedCard }}
+                  >
+                    <PoolView roundInfo={roundInfo} />
+                  </CurrentHighlightedCardContext.Provider>
+                </CurrentScoringActionContext.Provider>
               </div>
+              {updateAccumDoneCalculating ? (
+                <div className={styles.updateAccumDiv}>
+                  {roundInfo.winner ? (
+                    <label>Player {roundInfo.winner + 1} takes...</label>
+                  ) : (
+                    <></>
+                  )}
+                  <p>
+                    Dmg:{" "}
+                    {updateAccum.totalDamageBase *
+                      updateAccum.totalDamageScalar}{" "}
+                    Damage
+                  </p>
+                  <p>
+                    Coins:{" "}
+                    {updateAccum.totalCoinsBase * updateAccum.totalCoinsScalar}{" "}
+                    Coins
+                  </p>
+                </div>
+              ) : (
+                <div className={styles.updateAccumDiv}>
+                  {roundInfo.winner ? (
+                    <label>Player {roundInfo.winner + 1} wins!</label>
+                  ) : (
+                    <></>
+                  )}
+                  <p>
+                    Dmg: {updateAccum.totalDamageBase} x{" "}
+                    {updateAccum.totalDamageScalar}
+                  </p>
+                  <p>
+                    Coins: {updateAccum.totalCoinsBase} x{" "}
+                    {updateAccum.totalCoinsScalar}
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -448,4 +515,22 @@ export const useCurrentHighlightedCardContext = () => {
     );
   }
   return highlightedCardState;
+};
+
+export const CurrentScoringActionContext = createContext<
+  | {
+      currentScoringAction: UpdateAction | undefined;
+      setCurrentScoringAction: (ua: UpdateAction | undefined) => void;
+    }
+  | undefined
+>(undefined);
+
+export const useCurrentScoringActionContext = () => {
+  const currentScoringActionState = useContext(CurrentScoringActionContext);
+  if (currentScoringActionState == undefined) {
+    throw Error(
+      "useCurrentScoringActionContext must be used within a CurrentScoringActionContext.Provider"
+    );
+  }
+  return currentScoringActionState;
 };

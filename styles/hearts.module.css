@@ -22,6 +22,8 @@
     var(--backgroundColorB),
     var(--backgroundColorA)
   );
+  font-family: fantasy;
+  font-size: x-large;
 }
 
 .gameboard {
@@ -388,6 +390,26 @@
   }
 }
 
+.currentlyScoredCard {
+  background-image: var(--backgroundImage);
+  background-blend-mode: var(--backgroundBlendMode);
+  background-color: var(--backgroundColor);
+}
+
+.currentlyScoredCardScoring {
+  border-radius: 1px;
+  border-color: #000;
+  border-style: solid;
+  border-width: 1px;
+  position: relative;
+  left: 150px;
+  padding: 10px;
+  background-image: var(--backgroundImage);
+  background-blend-mode: var(--backgroundBlendMode);
+  background-color: var(--backgroundColor);
+  /* min-width: 100px; */
+}
+
 .sortPanel {
   display: flex;
   flex-direction: column;
@@ -507,4 +529,26 @@
 
 .assignEditionsCardDragOver {
   background-color: aqua;
+}
+
+.updateAccumDiv {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  border-width: 3px;
+  border-color: black;
+  border-style: solid;
+  padding: 15px;
+  width: 100%;
+  background-image: var(--backgroundImage);
+  background-blend-mode: var(--backgroundBlendMode);
+  background-color: var(--backgroundColor);
+}
+
+.updateAccumDiv p {
+  border-bottom: #000;
+  border-bottom-width: 2px;
+  border-bottom-style: dotted;
 }

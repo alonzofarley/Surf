@@ -209,26 +209,26 @@ const attachRarityToEdition = (
             rarity: rarity
           };
       }
-    case "extra_chips":
+    case "extra_coins":
       switch (rarity) {
         case "common":
           return {
-            type: "extra_chips",
+            type: "extra_coins",
             rarity: rarity
           };
         case "uncommon":
           return {
-            type: "extra_chips",
+            type: "extra_coins",
             rarity: rarity
           };
         case "rare":
           return {
-            type: "extra_chips",
+            type: "extra_coins",
             rarity: rarity
           };
         case "legendary":
           return {
-            type: "extra_chips",
+            type: "extra_coins",
             rarity: rarity
           };
       }

@@ -3,7 +3,7 @@ import React from "react";
 export let EditionConst = [
   "extra_damage",
   "switch_cards",
-  "extra_chips",
+  "extra_coins",
   "swap_low_and_high",
   "healing"
 ] as const;
@@ -34,7 +34,7 @@ export type SwapLowAndHighEdition = {
 } & Edition;
 
 export type ExtraChips = {
-  type: "extra_chips";
+  type: "extra_coins";
 } & Edition;
 
 export type NoEdition = {
@@ -139,3 +139,39 @@ export type FullGameState = {
   showAssignEditions: boolean;
   highlightedCard: CardType | undefined;
 };
+
+export type PlayCardUpdates = {
+  players: PlayerType[];
+  roundInfo: RoundInfo;
+  currentTurn: number;
+  log: Log;
+};
+
+type UpdateActionSource = {
+  sourcePlayer: number;
+  sourceCard: CardType;
+};
+
+export type UpdateAccumulator = {
+  totalDamageBase: number;
+  totalDamageScalar: number;
+  totalCoinsBase: number;
+  totalCoinsScalar: number;
+};
+
+export type UpdateAction = (
+  | {
+      type: "add_damage";
+      amount: number;
+    }
+  | {
+      type: "add_coins";
+      amount: number;
+    }
+  | {
+      type: "mult_damage";
+      scalar: number;
+    }
+  | { type: "mult_chips"; scalar: number }
+) &
+  UpdateActionSource;

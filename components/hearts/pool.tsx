@@ -3,7 +3,10 @@ import { displayCard } from "./card";
 import { RoundInfo } from "@/utils/hearts/types";
 import styles from "./../../styles/hearts.module.css";
 import { displayPlayerNumberFromId } from "@/utils/hearts/cardHelpers";
-import { useCurrentHighlightedCardContext } from "./gameboard";
+import {
+  useCurrentHighlightedCardContext,
+  useCurrentScoringActionContext
+} from "./gameboard";
 
 type PoolViewProps = {
   roundInfo: RoundInfo;
@@ -11,6 +14,9 @@ type PoolViewProps = {
 
 export const PoolView = (props: PoolViewProps) => {
   const pool = props.roundInfo.pool;
+  const highlightedCardState = useCurrentHighlightedCardContext();
+  const currentScoringActionState = useCurrentScoringActionContext();
+
   if (!(0 in pool)) {
     pool[0] = undefined;
   }
@@ -46,8 +52,6 @@ export const PoolView = (props: PoolViewProps) => {
               );
             }
 
-            const highlightedCardState = useCurrentHighlightedCardContext();
-
             let onMouseEnter = () => {
               highlightedCardState.setHighlightedCard(playedCard);
             };
@@ -55,6 +59,13 @@ export const PoolView = (props: PoolViewProps) => {
             let onMouseLeave = () => {
               highlightedCardState.setHighlightedCard(undefined);
             };
+
+            // let isCurrentlyBeingScored =
+            //   playedCard.suit ==
+            //     currentScoringCardState.currentScoringCard?.suit &&
+            //   playedCard.value ==
+            //     currentScoringCardState.currentScoringCard.value;
+
             if (leadingPlayerId == playerId) {
               return (
                 <li key={i}>
@@ -65,7 +76,8 @@ export const PoolView = (props: PoolViewProps) => {
                     undefined,
                     undefined,
                     onMouseEnter,
-                    onMouseLeave
+                    onMouseLeave,
+                    currentScoringActionState.currentScoringAction
                   )}
                 </li>
               );
@@ -79,7 +91,8 @@ export const PoolView = (props: PoolViewProps) => {
                     undefined,
                     undefined,
                     onMouseEnter,
-                    onMouseLeave
+                    onMouseLeave,
+                    currentScoringActionState.currentScoringAction
                   )}
                 </li>
               );

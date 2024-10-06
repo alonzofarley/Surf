@@ -1,6 +1,6 @@
 import { Offcanvas } from "react-bootstrap";
 import styles from "./../../styles/hearts.module.css";
-import { CardEdition, PlayerType } from "@/utils/hearts/types";
+import { PlayerType } from "@/utils/hearts/types";
 import { usePlayersStateContext } from "./gameboard";
 
 import { AssignEditionsCardView } from "./assignEditionsCardView";
@@ -21,10 +21,6 @@ export const AssignEditionsView = (props: AssignEditionsViewProps) => {
 
   return (
     <>
-      {/* <ToggleAssignEditionsButton
-        setShowAssignEditions={props.setShowAssignEditions}
-        show={true}
-      /> */}
       <Offcanvas
         show={props.showAssignEditions}
         className={`${styles.assignEditionsView} ${styles.offCanvasDiv}`}

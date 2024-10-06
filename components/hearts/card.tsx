@@ -2,8 +2,12 @@ import React from "react";
 import Image from "next/image";
 import styles from "./../../styles/hearts.module.css";
 import { useCardSelectionControl } from "./player";
-import { CardType } from "@/utils/hearts/types";
-import { getImagePathForCard, textOfCard } from "@/utils/hearts/cardHelpers";
+import { CardType, UpdateAction } from "@/utils/hearts/types";
+import {
+  getImagePathForCard,
+  getTextForUpdateAction,
+  textOfCard
+} from "@/utils/hearts/cardHelpers";
 import { Tooltip } from "@nextui-org/tooltip";
 import { useCurrentHighlightedCardContext } from "./gameboard";
 
@@ -49,41 +53,44 @@ export const displayCard = (
   className?: string,
   onClick?: () => void,
   onMouseEnter?: () => void,
-  onMouseLeave?: () => void
+  onMouseLeave?: () => void,
+  currentScoringAction?: UpdateAction
 ) => {
-  return (
-    <div
-      className={className ?? styles.card}
-      onClick={onClick ?? (() => {})}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
-      {/* <Tooltip
-        content={getCardToolTipText(card)}
-        color={"danger"}
-        delay={50}
-        offset={20}
-        className={styles.cardToolTip}
-      > */}
-      <Image
-        className={styles.cardImage}
-        src={getImagePathForCard(card)}
-        alt={textOfCard(card)}
-        height={0}
-        width={0}
-        unoptimized
-      ></Image>
-      {/* </Tooltip> */}
-    </div>
-  );
-};
-
-const getCardToolTipText = (card: CardType) => {
-  return "";
-  if (card.edition.type != "none") {
-    return "Edition: " + card.edition.type + " " + card.edition.rarity;
+  let divClassName = className ?? styles.card;
+  let currentScoredCard = currentScoringAction?.sourceCard;
+  let currentlyBeingScored =
+    card.suit == currentScoredCard?.suit &&
+    card.value == currentScoredCard.value;
+  if (currentlyBeingScored) {
+    divClassName = divClassName + " " + styles.currentlyScoredCard;
   }
-  return "No Edition";
+
+  return (
+    <>
+      <div
+        className={divClassName}
+        onClick={onClick ?? (() => {})}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+      >
+        {currentlyBeingScored && currentScoringAction ? (
+          <div className={styles.currentlyScoredCardScoring}>
+            {getTextForUpdateAction(currentScoringAction)}
+          </div>
+        ) : (
+          <></>
+        )}
+        <Image
+          className={styles.cardImage}
+          src={getImagePathForCard(card)}
+          alt={textOfCard(card)}
+          height={0}
+          width={0}
+          unoptimized
+        ></Image>
+      </div>
+    </>
+  );
 };
 
 export default Card;

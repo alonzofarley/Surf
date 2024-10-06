@@ -10,13 +10,16 @@ import {
   HandHistory,
   Log,
   NoEdition,
+  PlayCardUpdates,
   PlayerControl,
   PlayerInventory,
   PlayerType,
   PoolType,
   RoundHistory,
   RoundInfo,
-  Suit
+  Suit,
+  UpdateAccumulator,
+  UpdateAction
 } from "./types";
 
 export const ACE_IS_HIGH = true;
@@ -267,6 +270,8 @@ export const removeCardFromPlayer = (
 
 export const determineDamage = (roundInfo: RoundInfo) => {
   let totalDamage = 0;
+  let damageScalar = 1;
+
   let cards = getPoolPids(roundInfo.pool).map((pid) => {
     return roundInfo.pool[pid];
   });
@@ -277,8 +282,32 @@ export const determineDamage = (roundInfo: RoundInfo) => {
     if (card?.suit == "spades" && card.value == "Q") {
       totalDamage += 13;
     }
+    if (card?.edition.type == "extra_damage") {
+      damageScalar = damageScalar * 2;
+    }
   });
+  totalDamage = totalDamage * damageScalar;
   return totalDamage;
+};
+
+export const determineDamageFromCard = (card: CardType) => {
+  if (card?.suit == "hearts") {
+    return 1;
+  }
+  if (card?.suit == "spades" && card.value == "Q") {
+    return 13;
+  }
+  return 0;
+};
+
+export const determineCoinsFromCard = (card: CardType) => {
+  if (
+    card?.suit != "hearts" &&
+    !(card?.suit == "spades" && card.value == "Q")
+  ) {
+    return 1;
+  }
+  return 0;
 };
 
 export const determineCoins = (roundInfo: RoundInfo) => {
@@ -292,25 +321,29 @@ export const determineCoins = (roundInfo: RoundInfo) => {
     if (
       card?.suit != "hearts" &&
       !(card?.suit == "spades" && card.value == "Q")
-    )
+    ) {
       totalCoins += 1;
+    }
+    // if (card?.edition.type == "extra_") {
+    //   damageScalar = damageScalar * 2;
+    // }
   });
+
   return totalCoins;
 };
 
 export const adjudicateFinishedRound = (
-  previousRoundInfo: RoundInfo,
-  previousPlayers: PlayerType[],
-  previousLog: Log
+  previousUpdates: PlayCardUpdates,
+  updateAccum: UpdateAccumulator
 ) => {
-  if (previousRoundInfo.winner == undefined) {
+  if (previousUpdates.roundInfo.winner == undefined) {
     throw Error(
       "'adjudicateFinishedRound()' should only be called if there was a winner determined last round"
     );
   }
 
   //TODO: should probably change how this is done later.
-  let currentRoundHistory = previousLog.history.slice(-1)[0];
+  let currentRoundHistory = previousUpdates.log.history.slice(-1)[0];
 
   currentRoundHistory = {
     ...currentRoundHistory,
@@ -318,32 +351,34 @@ export const adjudicateFinishedRound = (
       ...currentRoundHistory.roundHistories,
       {
         roundInfo: {
-          ...previousRoundInfo,
-          winner: previousRoundInfo.winner
+          ...previousUpdates.roundInfo,
+          winner: previousUpdates.roundInfo.winner
         }
       }
     ]
   };
 
   let updatedLog: Log = {
-    history: [...previousLog.history.slice(0, -1), currentRoundHistory]
+    history: [...previousUpdates.log.history.slice(0, -1), currentRoundHistory]
   };
 
-  let updatedCurrentTurn = previousRoundInfo.winner;
+  let updatedCurrentTurn = previousUpdates.roundInfo.winner;
 
   let updatedRoundInfo = createNewRoundInfo(
     NUM_OF_PLAYERS,
-    previousRoundInfo.roundNumber + 1
+    previousUpdates.roundInfo.roundNumber + 1
   );
 
-  let updatedPlayers = previousPlayers.map((player) => {
-    if (player.id == previousRoundInfo.winner) {
-      let damage: number = determineDamage(previousRoundInfo);
-      let coins: number = determineCoins(previousRoundInfo);
+  let updatedPlayers = previousUpdates.players.map((player) => {
+    if (player.id == previousUpdates.roundInfo.winner) {
       return {
         ...player,
-        health: player.health - damage,
-        coins: player.coins + coins
+        health:
+          player.health -
+          updateAccum.totalDamageBase * updateAccum.totalDamageScalar,
+        coins:
+          player.coins +
+          updateAccum.totalCoinsBase * updateAccum.totalCoinsScalar
       };
     } else {
       return player;
@@ -351,30 +386,117 @@ export const adjudicateFinishedRound = (
   });
 
   return {
-    updatedPlayers: updatedPlayers,
-    updatedRoundInfo: updatedRoundInfo,
-    updatedCurrentTurn: updatedCurrentTurn,
-    updatedLog: updatedLog
-  };
+    players: updatedPlayers,
+    roundInfo: updatedRoundInfo,
+    currentTurn: updatedCurrentTurn,
+    log: updatedLog
+  } as PlayCardUpdates;
+};
+
+export const adjudicateUpdateAction = (
+  updateAccum: UpdateAccumulator,
+  updateAction: UpdateAction
+) => {
+  if (updateAction.type == "add_damage") {
+    return {
+      ...updateAccum,
+      totalDamageBase: updateAccum.totalDamageBase + updateAction.amount
+    } as UpdateAccumulator;
+  }
+  if (updateAction.type == "add_coins") {
+    return {
+      ...updateAccum,
+      totalCoinsBase: updateAccum.totalCoinsBase + updateAction.amount
+    } as UpdateAccumulator;
+  }
+  if (updateAction.type == "mult_damage") {
+    return {
+      ...updateAccum,
+      totalDamageScalar: updateAccum.totalDamageScalar * updateAction.scalar
+    } as UpdateAccumulator;
+  }
+  return {
+    ...updateAccum
+  } as UpdateAccumulator;
+};
+
+export const getUpdateActions = (previousUpdates: PlayCardUpdates) => {
+  if (previousUpdates.roundInfo.winner == undefined) {
+    throw Error(
+      "'getUpdateActions()' should only be called if there was a winner determined last round"
+    );
+  }
+
+  let leadingPlayerNumber: number | undefined =
+    previousUpdates.roundInfo.leading.player;
+  if (leadingPlayerNumber == undefined) {
+    throw Error(
+      "'getUpdateActions()' should only be called if there was a winner determined last round"
+    );
+  }
+  let nextPlayerNumber = leadingPlayerNumber;
+  let count = 0;
+  let updateActions: UpdateAction[] = [];
+  while (count < 4) {
+    let playedCard = previousUpdates.roundInfo.pool[nextPlayerNumber];
+    if (playedCard == undefined)
+      throw Error(
+        "'getUpdateActions()' should only be called if every player played a card during the round"
+      );
+    let damage = determineDamageFromCard(playedCard);
+    let chips = determineCoinsFromCard(playedCard);
+    if (damage > 0) {
+      updateActions.push({
+        type: "add_damage",
+        amount: damage,
+        sourcePlayer: nextPlayerNumber,
+        sourceCard: playedCard
+      });
+    }
+    if (chips > 0) {
+      updateActions.push({
+        type: "add_coins",
+        amount: chips,
+        sourcePlayer: nextPlayerNumber,
+        sourceCard: playedCard
+      });
+    }
+    if (playedCard.edition.type == "extra_damage") {
+      updateActions.push({
+        type: "mult_damage",
+        scalar: 2,
+        sourcePlayer: nextPlayerNumber,
+        sourceCard: playedCard
+      });
+    }
+    if (playedCard.edition.type == "extra_coins") {
+      updateActions.push({
+        type: "add_coins",
+        amount: 50,
+        sourcePlayer: nextPlayerNumber,
+        sourceCard: playedCard
+      });
+    }
+    nextPlayerNumber = (nextPlayerNumber + 1) % 4;
+    count = count + 1;
+  }
+
+  console.log("updateActions", updateActions);
+  return updateActions as UpdateAction[];
 };
 
 export const playCardHelper =
   (pid: PlayerType["id"], card: CardType) =>
-  async (
-    previousRoundInfo: RoundInfo,
-    previousPlayers: PlayerType[],
-    previousTurn: number,
-    previousLog: Log
-  ) => {
-    let isLeadingPlay = Object.values(previousRoundInfo.pool).every(
+  async (previousUpdates: PlayCardUpdates) => {
+    let isLeadingPlay = Object.values(previousUpdates.roundInfo.pool).every(
       (playedCard) => playedCard == undefined
     );
-    const newPool = { ...previousRoundInfo.pool, [pid]: card };
+    const newPool = { ...previousUpdates.roundInfo.pool, [pid]: card };
     console.log(
       `Player ${displayPlayerNumberFromId(pid)} played ${textOfCard(card)}`
     );
     let updatedRoundInfo = {
-      ...previousRoundInfo,
+      ...previousUpdates.roundInfo,
       pool: newPool
     };
 
@@ -387,7 +509,7 @@ export const playCardHelper =
         }
       };
     }
-    let updatedPlayers = previousPlayers.map((player) => {
+    let updatedPlayers = previousUpdates.players.map((player) => {
       if (pid != player.id) return player;
 
       let playedCard = updatedRoundInfo.pool[pid];
@@ -404,19 +526,19 @@ export const playCardHelper =
       ? determinePoolWinner(updatedRoundInfo)
       : undefined;
 
-    let updatedCurrentTurn = (previousTurn + 1) % 4;
-    let updatedLog = previousLog;
+    let updatedCurrentTurn = (previousUpdates.currentTurn + 1) % 4;
+    let updatedLog = previousUpdates.log;
     updatedRoundInfo = {
       ...updatedRoundInfo,
       winner: winner?.playerId
     };
 
     return {
-      updatedPlayers: updatedPlayers,
-      updatedRoundInfo: updatedRoundInfo,
-      updatedCurrentTurn: updatedCurrentTurn,
-      updatedLog: updatedLog
-    };
+      players: updatedPlayers,
+      roundInfo: updatedRoundInfo,
+      currentTurn: updatedCurrentTurn,
+      log: updatedLog
+    } as PlayCardUpdates;
   };
 
 export const reverseList = (list: any[]): any[] => {
@@ -535,7 +657,7 @@ export const saveState = (fullGameState: FullGameState) => {
 };
 
 export const getEditionDescription = (edition: CardEdition) => {
-  if (edition.type == "extra_chips") {
+  if (edition.type == "extra_coins") {
     return "Gives extra chips to the winner of the round in which this card was played.";
   } else if (edition.type == "healing") {
     return "Gives healing to the winner of the round in which this card was played.";
@@ -569,4 +691,19 @@ export const getNewInventory = (changes: Changes, p: PlayerType) => {
     }
   });
   return newEditionsInventory;
+};
+
+export const getTextForUpdateAction = (updateAction: UpdateAction) => {
+  switch (updateAction.type) {
+    case "add_coins":
+      return `+${updateAction.amount} Coins`;
+    case "add_damage":
+      return `+${updateAction.amount} Damage`;
+    case "mult_chips":
+      return `x${updateAction.scalar} Coins`;
+    case "mult_damage":
+      return `x${updateAction.scalar} Damage`;
+    default:
+      throw Error("Not Implemented for updateAction Type");
+  }
 };
